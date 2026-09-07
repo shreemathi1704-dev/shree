@@ -10,6 +10,9 @@ const startButton =
 const stopButton =
     document.getElementById("stop-camera");
 
+const switchButton =
+    document.getElementById("switch-camera");
+
 const cameraStatus =
     document.getElementById("camera-status");
 
@@ -27,9 +30,22 @@ let stream = null;
 
 let scanning = false;
 
+let processing = false;
+
 let scanTimer = null;
 
-let processing = false;
+
+/*
+========================================
+CAMERA MODE
+========================================
+
+environment = BACK CAMERA
+
+user = FRONT CAMERA
+*/
+
+let cameraMode = "environment";
 
 
 /*
@@ -48,11 +64,7 @@ async function startCamera() {
 
     try {
 
-        if (stream) {
-
-            stopCamera();
-
-        }
+        stopCurrentCamera();
 
 
         stream =
@@ -62,7 +74,7 @@ async function startCamera() {
                     video: {
 
                         facingMode: {
-                            ideal: "environment"
+                            ideal: cameraMode
                         },
 
                         width: {
@@ -84,8 +96,7 @@ async function startCamera() {
             stream;
 
 
-        cameraStatus.textContent =
-            "Camera ready — place the leaf inside the frame";
+        await camera.play();
 
 
         scanning = true;
@@ -97,30 +108,41 @@ async function startCamera() {
 
 
         autoText.textContent =
-            "Automatic AI scanning is ON";
+            cameraMode === "environment"
+                ? "Back camera • Automatic scanning ON"
+                : "Front camera • Automatic scanning ON";
+
+
+        cameraStatus.textContent =
+            cameraMode === "environment"
+                ? "📷 Back camera ready — place leaf inside frame"
+                : "🤳 Front camera ready";
 
 
         /*
-        Wait for camera
+        Start automatic AI scanning
         */
 
         setTimeout(
-            startAutomaticScanning,
+            automaticScanning,
             1500
         );
 
 
     } catch (error) {
 
-        console.error(error);
+        console.error(
+            "Camera error:",
+            error
+        );
 
 
         cameraStatus.textContent =
-            "Camera permission denied";
+            "Unable to access camera";
 
 
         alert(
-            "Please allow camera permission and try again."
+            "Camera permission is required."
         );
 
     }
@@ -130,17 +152,60 @@ async function startCamera() {
 
 /*
 ========================================
-STOP CAMERA
+SWITCH CAMERA
 ========================================
 */
 
-stopButton.addEventListener(
+switchButton.addEventListener(
     "click",
-    stopCamera
+    async function () {
+
+        /*
+        Change camera
+        */
+
+        if (
+            cameraMode ===
+            "environment"
+        ) {
+
+            cameraMode = "user";
+
+        } else {
+
+            cameraMode = "environment";
+
+        }
+
+
+        /*
+        Restart camera
+        */
+
+        if (stream) {
+
+            await startCamera();
+
+        } else {
+
+            cameraStatus.textContent =
+                cameraMode === "environment"
+                    ? "Back camera selected"
+                    : "Front camera selected";
+
+        }
+
+    }
 );
 
 
-function stopCamera() {
+/*
+========================================
+STOP CURRENT CAMERA
+========================================
+*/
+
+function stopCurrentCamera() {
 
     scanning = false;
 
@@ -159,7 +224,11 @@ function stopCamera() {
     if (stream) {
 
         stream.getTracks().forEach(
-            track => track.stop()
+            function (track) {
+
+                track.stop();
+
+            }
         );
 
         stream = null;
@@ -169,20 +238,36 @@ function stopCamera() {
 
     camera.srcObject = null;
 
-
-    autoDot.classList.remove(
-        "active"
-    );
-
-
-    autoText.textContent =
-        "Automatic scanning is off";
-
-
-    cameraStatus.textContent =
-        "Camera stopped";
-
 }
+
+
+/*
+========================================
+STOP CAMERA BUTTON
+========================================
+*/
+
+stopButton.addEventListener(
+    "click",
+    function () {
+
+        stopCurrentCamera();
+
+
+        autoDot.classList.remove(
+            "active"
+        );
+
+
+        autoText.textContent =
+            "Automatic scanning is off";
+
+
+        cameraStatus.textContent =
+            "Camera stopped";
+
+    }
+);
 
 
 /*
@@ -191,12 +276,10 @@ AUTOMATIC SCANNING
 ========================================
 */
 
-function startAutomaticScanning() {
+function automaticScanning() {
 
     if (!scanning) {
-
         return;
-
     }
 
 
@@ -204,11 +287,11 @@ function startAutomaticScanning() {
 
 
     /*
-    Capture again after 4 seconds.
+    Analyze every 4 seconds
     */
 
     scanTimer = setTimeout(
-        startAutomaticScanning,
+        automaticScanning,
         4000
     );
 
@@ -217,23 +300,19 @@ function startAutomaticScanning() {
 
 /*
 ========================================
-CAPTURE FRAME
+CAPTURE CAMERA FRAME
 ========================================
 */
 
 async function captureAndAnalyze() {
 
     if (!scanning) {
-
         return;
-
     }
 
 
     if (processing) {
-
         return;
-
     }
 
 
@@ -251,13 +330,13 @@ async function captureAndAnalyze() {
 
 
     cameraStatus.textContent =
-        "🔍 AI is analyzing the leaf...";
+        "🔍 Scanning leaf with AI...";
 
 
     try {
 
         /*
-        Set canvas size
+        Canvas dimensions
         */
 
         canvas.width =
@@ -271,28 +350,44 @@ async function captureAndAnalyze() {
             canvas.getContext("2d");
 
 
+        /*
+        Capture current frame
+        */
+
         context.drawImage(
+
             camera,
+
             0,
+
             0,
+
             canvas.width,
+
             canvas.height
+
         );
 
 
         /*
-        Convert camera frame
-        into JPEG blob
+        Convert to image
         */
 
         const blob =
             await new Promise(
-                resolve =>
+                function (resolve) {
+
                     canvas.toBlob(
+
                         resolve,
+
                         "image/jpeg",
+
                         0.85
-                    )
+
+                    );
+
+                }
             );
 
 
@@ -306,7 +401,7 @@ async function captureAndAnalyze() {
 
 
         /*
-        Send image to Flask
+        Send to backend
         */
 
         const formData =
@@ -316,7 +411,7 @@ async function captureAndAnalyze() {
         formData.append(
             "image",
             blob,
-            "live_leaf.jpg"
+            "camera_leaf.jpg"
         );
 
 
@@ -337,6 +432,10 @@ async function captureAndAnalyze() {
             await response.json();
 
 
+        /*
+        Prediction successful
+        */
+
         if (
             data.status ===
             "success"
@@ -348,13 +447,15 @@ async function captureAndAnalyze() {
 
 
             cameraStatus.textContent =
-                "✓ Analysis complete — scanning again automatically";
+                "✓ Disease analysis complete";
+
+        }
 
 
-        } else {
+        else {
 
             cameraStatus.textContent =
-                "Move the camera closer to the leaf";
+                "Move camera closer to the leaf";
 
         }
 
@@ -362,14 +463,12 @@ async function captureAndAnalyze() {
     } catch (error) {
 
         console.error(
-            "AI error:",
             error
         );
 
 
         cameraStatus.textContent =
             "Waiting for a clear leaf image...";
-
 
     }
 
@@ -392,29 +491,17 @@ function displayResult(data) {
     );
 
 
-    /*
-    Disease
-    */
-
     document.getElementById(
         "disease"
     ).textContent =
         data.disease;
 
 
-    /*
-    Crop
-    */
-
     document.getElementById(
         "crop"
     ).textContent =
         data.crop;
 
-
-    /*
-    Confidence
-    */
 
     const confidence =
         Number(
@@ -438,10 +525,6 @@ function displayResult(data) {
         ) + "%";
 
 
-    /*
-    Severity
-    */
-
     document.getElementById(
         "severity"
     ).textContent =
@@ -462,7 +545,7 @@ function displayResult(data) {
 
 
     data.solution.forEach(
-        function (item) {
+        function (solution) {
 
             const li =
                 document.createElement(
@@ -470,7 +553,7 @@ function displayResult(data) {
                 );
 
             li.textContent =
-                item;
+                solution;
 
             solutionList.appendChild(
                 li
@@ -494,7 +577,7 @@ function displayResult(data) {
 
 
     data.prevention.forEach(
-        function (item) {
+        function (prevention) {
 
             const li =
                 document.createElement(
@@ -502,7 +585,7 @@ function displayResult(data) {
                 );
 
             li.textContent =
-                item;
+                prevention;
 
             preventionList.appendChild(
                 li
@@ -513,12 +596,15 @@ function displayResult(data) {
 
 
     /*
-    Scroll result into view
+    Show result
     */
 
     result.scrollIntoView({
+
         behavior: "smooth",
+
         block: "start"
+
     });
 
 
@@ -529,7 +615,7 @@ function displayResult(data) {
 
 /*
 ========================================
-LOAD HISTORY
+HISTORY
 ========================================
 */
 
@@ -580,13 +666,9 @@ async function loadHistory() {
                     <tr>
 
                         <th>Date</th>
-
                         <th>Crop</th>
-
                         <th>Disease</th>
-
                         <th>Confidence</th>
-
                         <th>Severity</th>
 
                     </tr>
@@ -599,7 +681,7 @@ async function loadHistory() {
 
 
         data.data.forEach(
-            record => {
+            function (record) {
 
                 html += `
 
@@ -658,11 +740,5 @@ async function loadHistory() {
 
 }
 
-
-/*
-========================================
-INITIALIZE
-========================================
-*/
 
 loadHistory();
