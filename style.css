@@ -1,13 +1,55 @@
-.switch-button {
-    border: none;
-    padding: 14px 25px;
-    border-radius: 12px;
-    font-weight: bold;
-    cursor: pointer;
-    background: #e8f1e9;
-    color: #2f8147;
+.upload-section {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 30px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 5px 25px rgba(0,0,0,0.08);
+    text-align: center;
 }
 
-.switch-button:hover {
-    background: #dcebdd;
+.upload-box {
+    margin-top: 25px;
+    padding: 30px;
+    border: 2px dashed #4caf50;
+    border-radius: 15px;
+    background: #f7fff8;
+}
+
+.upload-box input {
+    display: block;
+    margin: 0 auto 20px;
+    padding: 12px;
+    max-width: 100%;
+}
+
+.primary-button {
+    border: none;
+    padding: 14px 28px;
+    border-radius: 12px;
+    background: #2f8147;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.primary-button:hover {
+    background: #256b39;
+}
+
+#upload-preview-container {
+    margin-top: 25px;
+}
+
+#upload-preview {
+    max-width: 400px;
+    width: 100%;
+    border-radius: 15px;
+    margin-top: 10px;
+}
+
+#upload-status {
+    margin-top: 15px;
+    font-weight: bold;
 }
