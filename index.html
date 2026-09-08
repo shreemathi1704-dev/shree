@@ -1,24 +1,264 @@
-<div class="camera-controls">
+<!DOCTYPE html>
 
-    <button
-        id="start-camera"
-        class="main-button"
-    >
-        📷 Start Camera
-    </button>
+<html lang="en">
 
-    <button
-        id="switch-camera"
-        class="switch-button"
-    >
-        🔄 Switch Camera
-    </button>
+<head>
 
-    <button
-        id="stop-camera"
-        class="stop-button"
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
     >
-        ⏹ Stop
-    </button>
+
+    <title>
+        CropCare AI
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for(
+            'static',
+            filename='style.css'
+        ) }}"
+    >
+
+</head>
+
+
+<body>
+
+<div class="container">
+
+    <h1>
+        🌱 CropCare AI
+    </h1>
+
+    <p class="subtitle">
+        Satellite Based Crop Monitoring
+    </p>
+
+
+    <div class="card">
+
+        <h2>
+            🛰️ Satellite NDVI Analysis
+        </h2>
+
+        <p>
+            Click the button below to get
+            your current GPS location and
+            satellite vegetation information.
+        </p>
+
+
+        <button
+            onclick="getSatelliteData()"
+        >
+            📍 Get Satellite Data
+        </button>
+
+    </div>
+
+
+    <div class="card">
+
+        <h2>
+            📊 Satellite Result
+        </h2>
+
+
+        <div id="result">
+
+            <p>
+                Waiting for analysis...
+            </p>
+
+        </div>
+
+    </div>
 
 </div>
+
+
+<script>
+
+function getSatelliteData() {
+
+    const result =
+        document.getElementById(
+            "result"
+        );
+
+
+    result.innerHTML =
+
+        "<p>📍 Getting GPS location...</p>";
+
+
+    if (
+        !navigator.geolocation
+    ) {
+
+        result.innerHTML =
+
+            "<p>❌ GPS is not supported by this browser.</p>";
+
+        return;
+    }
+
+
+    navigator.geolocation.getCurrentPosition(
+
+        function(position) {
+
+            const latitude =
+                position.coords.latitude;
+
+            const longitude =
+                position.coords.longitude;
+
+
+            result.innerHTML =
+
+                "<p>🛰️ Connecting to Sentinel-2...</p>";
+
+
+            fetch(
+                "/satellite",
+                {
+
+                    method:
+                        "POST",
+
+                    headers: {
+
+                        "Content-Type":
+                            "application/json"
+
+                    },
+
+                    body:
+                        JSON.stringify({
+
+                            latitude:
+                                latitude,
+
+                            longitude:
+                                longitude
+
+                        })
+
+                }
+            )
+
+            .then(
+                response =>
+                    response.json()
+            )
+
+            .then(
+                data => {
+
+                    if (
+                        !data.success
+                    ) {
+
+                        result.innerHTML =
+
+                            "<p>❌ " +
+                            data.message +
+                            "</p>";
+
+                        return;
+                    }
+
+
+                    result.innerHTML = `
+
+                        <div class="result-box">
+
+                            <h3>
+                                🛰️ Sentinel-2
+                            </h3>
+
+                            <p>
+                                <b>Latitude:</b>
+                                ${data.latitude}
+                            </p>
+
+                            <p>
+                                <b>Longitude:</b>
+                                ${data.longitude}
+                            </p>
+
+                            <p>
+                                <b>NDVI:</b>
+                                ${data.ndvi}
+                            </p>
+
+                            <p>
+                                <b>Vegetation:</b>
+                                ${data.field_status}
+                            </p>
+
+                            <p>
+                                <b>Field Condition:</b>
+                                ${data.field_condition}
+                            </p>
+
+                            <p>
+                                <b>Images Found:</b>
+                                ${data.images_found}
+                            </p>
+
+                        </div>
+
+                    `;
+
+                }
+            )
+
+            .catch(
+                error => {
+
+                    console.log(
+                        error
+                    );
+
+                    result.innerHTML =
+
+                        "<p>❌ Server connection error.</p>";
+
+                }
+            );
+
+        },
+
+        function(error) {
+
+            result.innerHTML = `
+
+                <p>
+                    ❌ Unable to access location.
+                </p>
+
+                <p>
+                    Please allow location permission
+                    in your browser.
+                </p>
+
+            `;
+
+        }
+
+    );
+
+}
+
+</script>
+
+
+</body>
+
+</html>
