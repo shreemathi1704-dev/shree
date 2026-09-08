@@ -17,10 +17,7 @@
 
     <link
         rel="stylesheet"
-        href="{{ url_for(
-            'static',
-            filename='style.css'
-        ) }}"
+        href="{{ url_for('static', filename='style.css') }}"
     >
 
 </head>
@@ -28,235 +25,319 @@
 
 <body>
 
-<div class="container">
 
-    <h1>
-        🌱 CropCare AI
-    </h1>
-
-    <p class="subtitle">
-        Satellite Based Crop Monitoring
-    </p>
+<div class="app">
 
 
-    <div class="card">
+    <!-- HEADER -->
 
-        <h2>
-            🛰️ Satellite NDVI Analysis
-        </h2>
+    <header>
 
-        <p>
-            Click the button below to get
-            your current GPS location and
-            satellite vegetation information.
-        </p>
+        <div class="logo">
+            🌱
+        </div>
 
+        <div>
 
-        <button
-            onclick="getSatelliteData()"
-        >
-            📍 Get Satellite Data
-        </button>
-
-    </div>
-
-
-    <div class="card">
-
-        <h2>
-            📊 Satellite Result
-        </h2>
-
-
-        <div id="result">
+            <h1>
+                CropCare AI
+            </h1>
 
             <p>
-                Waiting for analysis...
+                AI Crop Disease Detection
             </p>
 
         </div>
 
+    </header>
+
+
+    <!-- CAMERA -->
+
+    <section class="camera-card">
+
+        <div class="camera-container">
+
+            <video
+                id="camera"
+                autoplay
+                playsinline
+            ></video>
+
+
+            <div
+                id="cameraMessage"
+                class="camera-message"
+            >
+                Starting camera...
+            </div>
+
+
+            <!-- Lens scanning frame -->
+
+            <div class="scan-frame">
+
+                <div class="corner top-left"></div>
+
+                <div class="corner top-right"></div>
+
+                <div class="corner bottom-left"></div>
+
+                <div class="corner bottom-right"></div>
+
+            </div>
+
+
+            <div
+                id="scanLine"
+                class="scan-line"
+            ></div>
+
+        </div>
+
+
+        <!-- CAMERA BUTTONS -->
+
+        <div class="camera-buttons">
+
+            <button
+                onclick="switchCamera()"
+                class="small-button"
+            >
+                🔄
+            </button>
+
+
+            <button
+                onclick="captureImage()"
+                class="capture-button"
+            >
+                📷
+            </button>
+
+
+            <label
+                class="small-button upload-button"
+            >
+
+                🖼️
+
+                <input
+                    type="file"
+                    id="imageUpload"
+                    accept="image/*"
+                    hidden
+                >
+
+            </label>
+
+        </div>
+
+
+        <p class="camera-help">
+
+            Point the camera at a crop leaf and capture it.
+
+        </p>
+
+    </section>
+
+
+    <!-- PREVIEW -->
+
+    <section
+        id="previewSection"
+        class="card hidden"
+    >
+
+        <h2>
+            📸 Captured Image
+        </h2>
+
+        <img
+            id="preview"
+            class="preview"
+        >
+
+        <button
+            onclick="analyzeImage()"
+            class="analyze-button"
+        >
+            🔍 Analyze Crop
+        </button>
+
+    </section>
+
+
+    <!-- STATUS -->
+
+    <div
+        id="status"
+        class="status"
+    >
+        Ready
     </div>
+
+
+    <!-- RESULT -->
+
+    <section
+        id="result"
+        class="card hidden"
+    >
+
+        <h2>
+            🤖 AI Analysis
+        </h2>
+
+
+        <div class="result-item">
+
+            <span>
+                Disease
+            </span>
+
+            <strong
+                id="disease"
+            >
+                -
+            </strong>
+
+        </div>
+
+
+        <div class="result-item">
+
+            <span>
+                Confidence
+            </span>
+
+            <strong
+                id="confidence"
+            >
+                -
+            </strong>
+
+        </div>
+
+
+        <div class="result-item">
+
+            <span>
+                Severity
+            </span>
+
+            <strong
+                id="severity"
+            >
+                -
+            </strong>
+
+        </div>
+
+
+        <div class="description">
+
+            <h3>
+                Description
+            </h3>
+
+            <p
+                id="description"
+            >
+                -
+            </p>
+
+        </div>
+
+
+        <div class="recommendation">
+
+            <h3>
+                🌾 Recommendation
+            </h3>
+
+            <p
+                id="recommendation"
+            >
+                -
+            </p>
+
+        </div>
+
+
+        <!-- GPS -->
+
+        <div class="gps-box">
+
+            <h3>
+                📍 GPS Location
+            </h3>
+
+            <p>
+                Latitude:
+                <span id="latitude">
+                    -
+                </span>
+            </p>
+
+            <p>
+                Longitude:
+                <span id="longitude">
+                    -
+                </span>
+            </p>
+
+        </div>
+
+
+        <!-- SATELLITE -->
+
+        <div class="satellite-box">
+
+            <h3>
+                🛰️ Sentinel-2
+            </h3>
+
+            <p>
+                NDVI:
+                <strong id="ndvi">
+                    -
+                </strong>
+            </p>
+
+            <p>
+                Vegetation:
+                <strong id="vegetation">
+                    -
+                </strong>
+            </p>
+
+            <p>
+                Field Condition:
+                <strong id="fieldCondition">
+                    -
+                </strong>
+            </p>
+
+            <p>
+                Images Found:
+                <strong id="imagesFound">
+                    -
+                </strong>
+            </p>
+
+        </div>
+
+    </section>
+
 
 </div>
 
 
-<script>
-
-function getSatelliteData() {
-
-    const result =
-        document.getElementById(
-            "result"
-        );
-
-
-    result.innerHTML =
-
-        "<p>📍 Getting GPS location...</p>";
-
-
-    if (
-        !navigator.geolocation
-    ) {
-
-        result.innerHTML =
-
-            "<p>❌ GPS is not supported by this browser.</p>";
-
-        return;
-    }
-
-
-    navigator.geolocation.getCurrentPosition(
-
-        function(position) {
-
-            const latitude =
-                position.coords.latitude;
-
-            const longitude =
-                position.coords.longitude;
-
-
-            result.innerHTML =
-
-                "<p>🛰️ Connecting to Sentinel-2...</p>";
-
-
-            fetch(
-                "/satellite",
-                {
-
-                    method:
-                        "POST",
-
-                    headers: {
-
-                        "Content-Type":
-                            "application/json"
-
-                    },
-
-                    body:
-                        JSON.stringify({
-
-                            latitude:
-                                latitude,
-
-                            longitude:
-                                longitude
-
-                        })
-
-                }
-            )
-
-            .then(
-                response =>
-                    response.json()
-            )
-
-            .then(
-                data => {
-
-                    if (
-                        !data.success
-                    ) {
-
-                        result.innerHTML =
-
-                            "<p>❌ " +
-                            data.message +
-                            "</p>";
-
-                        return;
-                    }
-
-
-                    result.innerHTML = `
-
-                        <div class="result-box">
-
-                            <h3>
-                                🛰️ Sentinel-2
-                            </h3>
-
-                            <p>
-                                <b>Latitude:</b>
-                                ${data.latitude}
-                            </p>
-
-                            <p>
-                                <b>Longitude:</b>
-                                ${data.longitude}
-                            </p>
-
-                            <p>
-                                <b>NDVI:</b>
-                                ${data.ndvi}
-                            </p>
-
-                            <p>
-                                <b>Vegetation:</b>
-                                ${data.field_status}
-                            </p>
-
-                            <p>
-                                <b>Field Condition:</b>
-                                ${data.field_condition}
-                            </p>
-
-                            <p>
-                                <b>Images Found:</b>
-                                ${data.images_found}
-                            </p>
-
-                        </div>
-
-                    `;
-
-                }
-            )
-
-            .catch(
-                error => {
-
-                    console.log(
-                        error
-                    );
-
-                    result.innerHTML =
-
-                        "<p>❌ Server connection error.</p>";
-
-                }
-            );
-
-        },
-
-        function(error) {
-
-            result.innerHTML = `
-
-                <p>
-                    ❌ Unable to access location.
-                </p>
-
-                <p>
-                    Please allow location permission
-                    in your browser.
-                </p>
-
-            `;
-
-        }
-
-    );
-
-}
-
-</script>
+<script
+    src="{{ url_for('static', filename='script.js') }}"
+></script>
 
 
 </body>

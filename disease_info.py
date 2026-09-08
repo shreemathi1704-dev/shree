@@ -1,166 +1,85 @@
 DISEASE_INFO = {
 
-    "Tomato_Early_Blight": {
-        "crop": "Tomato",
-        "disease": "Early Blight",
-        "severity": "Moderate",
-        "solution": [
-            "Remove and destroy severely affected leaves.",
-            "Improve air circulation between plants.",
-            "Avoid overhead watering.",
-            "Keep the area around the plants clean.",
-            "Use an appropriate fungicide according to the product label and local agricultural guidance."
-        ],
-        "prevention": [
-            "Maintain proper spacing between plants.",
-            "Avoid keeping leaves wet for long periods.",
-            "Remove infected plant debris.",
-            "Monitor plants regularly."
-        ]
+    "Healthy": {
+        "description":
+            "The crop leaf appears healthy with no major visible disease symptoms.",
+
+        "severity":
+            "None",
+
+        "recommendation":
+            "Continue regular monitoring, proper irrigation, balanced nutrition and good field management."
     },
 
-    "Tomato_Late_Blight": {
-        "crop": "Tomato",
-        "disease": "Late Blight",
-        "severity": "Severe",
-        "solution": [
-            "Remove severely infected plant parts.",
-            "Separate heavily infected plants where practical.",
-            "Avoid overhead irrigation.",
-            "Improve field ventilation.",
-            "Consult an agricultural expert for an appropriate fungicide."
-        ],
-        "prevention": [
-            "Monitor plants frequently.",
-            "Avoid prolonged leaf wetness.",
-            "Maintain good field sanitation.",
-            "Use healthy planting material."
-        ]
+    "Tomato Early Blight": {
+        "description":
+            "Early blight is a fungal disease that can cause dark circular lesions and leaf damage.",
+
+        "severity":
+            "Moderate",
+
+        "recommendation":
+            "Remove severely affected leaves, improve airflow around plants and avoid unnecessary overhead watering. Consult a local agricultural expert for treatment decisions."
     },
 
-    "Tomato_Healthy": {
-        "crop": "Tomato",
-        "disease": "Healthy",
-        "severity": "Healthy",
-        "solution": [
-            "No visible disease was detected.",
-            "Continue normal irrigation and nutrition.",
-            "Keep monitoring the crop regularly."
-        ],
-        "prevention": [
-            "Inspect leaves regularly.",
-            "Maintain good field hygiene."
-        ]
+    "Tomato Late Blight": {
+        "description":
+            "Late blight can produce dark lesions and may spread rapidly under favorable environmental conditions.",
+
+        "severity":
+            "High",
+
+        "recommendation":
+            "Monitor affected plants and nearby plants carefully. Remove severely infected material where appropriate and seek local agricultural guidance."
     },
 
-    "Potato_Early_Blight": {
-        "crop": "Potato",
-        "disease": "Early Blight",
-        "severity": "Moderate",
-        "solution": [
-            "Remove infected leaves.",
-            "Keep the field free from infected plant debris.",
-            "Avoid unnecessary leaf wetness.",
-            "Improve air circulation.",
-            "Use an appropriate fungicide according to local agricultural guidance."
-        ],
-        "prevention": [
-            "Practice crop rotation.",
-            "Use healthy planting material.",
-            "Monitor plants regularly."
-        ]
+    "Potato Early Blight": {
+        "description":
+            "Potato early blight commonly produces dark lesions on leaves.",
+
+        "severity":
+            "Moderate",
+
+        "recommendation":
+            "Remove severely affected plant material and maintain good field sanitation."
     },
 
-    "Potato_Late_Blight": {
-        "crop": "Potato",
-        "disease": "Late Blight",
-        "severity": "Severe",
-        "solution": [
-            "Remove severely affected plant parts.",
-            "Reduce excessive moisture around plants.",
-            "Improve field ventilation.",
-            "Consult an agricultural expert for suitable treatment."
-        ],
-        "prevention": [
-            "Monitor the crop frequently.",
-            "Avoid prolonged leaf wetness.",
-            "Maintain field sanitation."
-        ]
+    "Potato Late Blight": {
+        "description":
+            "Potato late blight can spread rapidly and cause serious crop damage.",
+
+        "severity":
+            "High",
+
+        "recommendation":
+            "Monitor the field carefully and obtain region-specific disease-management advice from an agricultural expert."
     },
 
-    "Potato_Healthy": {
-        "crop": "Potato",
-        "disease": "Healthy",
-        "severity": "Healthy",
-        "solution": [
-            "No visible disease was detected.",
-            "Continue normal crop care.",
-            "Keep monitoring the crop."
-        ],
-        "prevention": [
-            "Regularly inspect leaves.",
-            "Maintain proper irrigation."
-        ]
-    },
+    "Rice Blast": {
+        "description":
+            "Rice blast is a fungal disease that can affect rice leaves and other plant parts.",
 
-    "Paddy_Bacterial_Leaf_Blight": {
-        "crop": "Paddy",
-        "disease": "Bacterial Leaf Blight",
-        "severity": "Moderate",
-        "solution": [
-            "Monitor the affected area carefully.",
-            "Avoid excessive nitrogen application.",
-            "Maintain proper water management.",
-            "Use healthy planting material.",
-            "Consult an agricultural expert for locally suitable treatment."
-        ],
-        "prevention": [
-            "Use healthy seeds or seedlings.",
-            "Maintain proper field hygiene.",
-            "Regularly monitor the crop."
-        ]
-    },
+        "severity":
+            "High",
 
-    "Paddy_Healthy": {
-        "crop": "Paddy",
-        "disease": "Healthy",
-        "severity": "Healthy",
-        "solution": [
-            "No visible disease was detected.",
-            "Continue normal crop management.",
-            "Continue regular monitoring."
-        ],
-        "prevention": [
-            "Maintain proper irrigation.",
-            "Inspect the crop regularly."
-        ]
+        "recommendation":
+            "Monitor the crop regularly and follow region-specific agricultural disease-management recommendations."
     }
 }
 
 
-def get_disease_info(class_name):
+def get_disease_info(disease):
 
-    if class_name in DISEASE_INFO:
-        return DISEASE_INFO[class_name]
+    return DISEASE_INFO.get(
+        disease,
+        {
+            "description":
+                "Information for this prediction is unavailable.",
 
-    clean_name = class_name.replace("_", " ")
+            "severity":
+                "Unknown",
 
-    parts = class_name.split("_")
-
-    crop = parts[0]
-
-    disease = " ".join(parts[1:])
-
-    return {
-        "crop": crop,
-        "disease": disease,
-        "severity": "Unknown",
-        "solution": [
-            "The detected condition is not yet in the recommendation database.",
-            "Monitor the crop carefully.",
-            "Consult a local agricultural expert before applying treatment."
-        ],
-        "prevention": [
-            "Continue regular crop monitoring."
-        ]
-    }
+            "recommendation":
+                "Consult an agricultural expert."
+        }
+    )

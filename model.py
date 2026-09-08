@@ -1,160 +1,95 @@
 import os
-import json
 import numpy as np
 import tensorflow as tf
 
-from PIL import Image
+MODEL_PATH = "crop_disease_model.keras"
 
-
-BASE_DIR = os.path.dirname(
-    os.path.dirname(os.path.abspath(__file__))
-)
-
-MODEL_PATH = os.path.join(
-    BASE_DIR,
-    "model",
-    "crop_disease_model.keras"
-)
-
-CLASS_NAMES_PATH = os.path.join(
-    BASE_DIR,
-    "model",
-    "class_names.json"
-)
-
-IMAGE_SIZE = (224, 224)
+# IMPORTANT:
+# These names MUST be in the exact same order
+# as the classes used when training your CNN.
+CLASS_NAMES = [
+    "Healthy",
+    "Tomato Early Blight",
+    "Tomato Late Blight",
+    "Potato Early Blight",
+    "Potato Late Blight",
+    "Rice Blast"
+]
 
 model = None
-class_names = []
 
 
 def load_model():
-
     global model
 
+    if model is not None:
+        return model
+
     if not os.path.exists(MODEL_PATH):
-
-        print("Model not found:")
-        print(MODEL_PATH)
-
-        return False
-
-    try:
-
-        model = tf.keras.models.load_model(
-            MODEL_PATH
+        raise FileNotFoundError(
+            "crop_disease_model.keras not found. "
+            "Place your trained model in the project folder."
         )
 
-        print("AI model loaded successfully.")
+    print("Loading CNN model...")
 
-        return True
-
-    except Exception as e:
-
-        print("Model loading error:", e)
-
-        return False
-
-
-def load_class_names():
-
-    global class_names
-
-    if not os.path.exists(CLASS_NAMES_PATH):
-
-        print("class_names.json not found.")
-
-        return False
-
-    try:
-
-        with open(
-            CLASS_NAMES_PATH,
-            "r"
-        ) as file:
-
-            class_names = json.load(file)
-
-        print(
-            "Classes loaded:",
-            class_names
-        )
-
-        return True
-
-    except Exception as e:
-
-        print(
-            "Class loading error:",
-            e
-        )
-
-        return False
-
-
-def prepare_image(image_path):
-
-    image = Image.open(
-        image_path
-    ).convert("RGB")
-
-    image = image.resize(
-        IMAGE_SIZE
+    model = tf.keras.models.load_model(
+        MODEL_PATH,
+        compile=False
     )
 
-    image_array = np.array(
-        image,
-        dtype=np.float32
+    print("CNN model loaded successfully.")
+
+    return model
+
+
+def predict_disease(image_path):
+
+    loaded_model = load_model()
+
+    # Load image
+    image = tf.keras.utils.load_img(
+        image_path,
+        target_size=(224, 224),
+        color_mode="rgb"
     )
 
+    # Convert image to array
+    image_array = tf.keras.utils.img_to_array(image)
+
+    # Normalize
     image_array = image_array / 255.0
 
+    # Add batch dimension
     image_array = np.expand_dims(
         image_array,
         axis=0
     )
 
-    return image_array
-
-
-def predict_image(image_path):
-
-    global model
-    global class_names
-
-    if model is None:
-
-        if not load_model():
-
-            raise Exception(
-                "AI model is not available."
-            )
-
-    if not class_names:
-
-        if not load_class_names():
-
-            raise Exception(
-                "Class names are not available."
-            )
-
-    image = prepare_image(
-        image_path
-    )
-
-    prediction = model.predict(
-        image,
+    # Prediction
+    predictions = loaded_model.predict(
+        image_array,
         verbose=0
     )[0]
 
-    index = int(
-        np.argmax(prediction)
-    )
+    # Check number of classes
+    if len(predictions) != len(CLASS_NAMES):
+        raise ValueError(
+            f"Model has {len(predictions)} outputs, "
+            f"but CLASS_NAMES contains {len(CLASS_NAMES)} classes."
+        )
+
+    # Find highest probability
+    class_index = int(np.argmax(predictions))
 
     confidence = float(
-        prediction[index] * 100
+        predictions[class_index] * 100
     )
 
-    predicted_class = class_names[index]
+    disease = CLASS_NAMES[class_index]
 
-    return predicted_class, confidence
+    return {
+        "disease": disease,
+        "confidence": round(confidence, 2),
+        "mode": "CNN AI"
+    }
