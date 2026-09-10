@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AgriGuard AI - Leaf Disease Scanner</title>
+    <title>AgriGuard AI - Plant Disease Scanner</title>
+    <!-- TensorFlow.js Library for AI processing -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <style>
         * {
@@ -164,10 +165,10 @@
             margin-top: 2px;
         }
 
-        /* Status Badge Colors */
+        /* Status Badges */
         .badge {
             display: inline-block;
-            padding: 3px 10px;
+            padding: 4px 12px;
             border-radius: 12px;
             font-size: 0.85rem;
             font-weight: 700;
@@ -175,7 +176,6 @@
         }
 
         .badge-curable { background-color: #dcfce7; color: #15803d; }
-        .badge-manageable { background-color: #fef9c3; color: #a16207; }
         .badge-not-curable { background-color: #fee2e2; color: #b91c1c; }
 
         .cure-box {
@@ -198,7 +198,7 @@
 
     <section class="hero">
         <h1 class="hero-title">Point Camera at Leaf</h1>
-        <p class="hero-desc">Keep the leaf inside the frame to scan and analyze health status.</p>
+        <p class="hero-desc">Keep the leaf inside the frame to scan and analyze crop health status.</p>
     </section>
 
     <div class="scanner-container">
@@ -216,7 +216,7 @@
 
         <!-- Result Box -->
         <div class="result-card" id="resultCard">
-            <h3 class="result-title">📊 Diagnosis & Cure Details</h3>
+            <h3 class="result-title">📊 Diagnosis & Treatment Output</h3>
 
             <div class="info-group">
                 <div class="info-label">Disease Name</div>
@@ -229,12 +229,12 @@
             </div>
 
             <div class="info-group">
-                <div class="info-label">Can it be cured? (குணப்படுத்த முடியுமா?)</div>
+                <div class="info-label">Curability Status</div>
                 <div id="curableBadge" class="badge badge-curable">-</div>
             </div>
 
             <div class="info-group">
-                <div class="info-label">How to Cure / Prevention (எப்படி சரி செய்வது?)</div>
+                <div class="info-label">Recommended Action / Treatment</div>
                 <div class="cure-box" id="cureInstructions">-</div>
             </div>
         </div>
@@ -259,39 +259,35 @@
         let stream = null;
         let scanInterval = null;
 
-        // Disease Database with Cure Details
+        // Dataset containing conditions, curability status, and treatment steps
         const diseaseData = [
             {
-                name: "Healthy Leaf (நோய் இல்லை)",
+                name: "Healthy Leaf",
                 accuracy: "98.5%",
-                status: "Healthy",
                 statusClass: "badge-curable",
-                statusText: "YES - Plant is Healthy",
-                cure: "செடி ஆரோக்கியமாக உள்ளது. வழக்கமான தண்ணீர் மற்றும் உரம் மேலாண்மையைத் தொடரவும்."
+                statusText: "HEALTHY - No Disease Detected",
+                cure: "The plant is healthy. Maintain regular watering and standard fertilizer application."
             },
             {
-                name: "Early Blight (முன்பருவ பிளைட்)",
+                name: "Tomato Early Blight",
                 accuracy: "94.2%",
-                status: "Curable",
                 statusClass: "badge-curable",
-                statusText: "YES - குணப்படுத்த முடியும்",
-                cure: "பாதிக்கப்பட்ட இலைகளை அகற்றி அழிக்கவும். காப்பர் பூஞ்சைக் கொல்லி (Copper Fungicide) அல்லது மேன்கோசெப் தெளிக்கவும்."
+                statusText: "YES - Curable",
+                cure: "Prune and destroy infected lower leaves. Apply copper-based fungicides or Mancozeb to prevent spreading."
             },
             {
-                name: "Yellow Leaf Curl Virus (மஞ்சள் சுருள் நச்சுயிரி)",
+                name: "Yellow Leaf Curl Virus",
                 accuracy: "91.8%",
-                status: "Not Curable",
                 statusClass: "badge-not-curable",
-                statusText: "NO - குணப்படுத்த முடியாது (கட்டுப்படுத்த மட்டுமே முடியும்)",
-                cure: "இந்த வைரஸை நேரடியாகக் குணப்படுத்த முடியாது. நோய் பரப்பும் வெள்ளை ஈக்களைக் (Whiteflies) கட்டுப்படுத்த வேப்பெண்ணெய் (Neem oil) அல்லது இமிடாக்ளோப்ரிட் தெளிக்கவும்."
+                statusText: "NO - Not Curable (Manageable Only)",
+                cure: "This viral infection cannot be directly cured. Control whiteflies (vectors) using Neem oil spray or Imidacloprid."
             },
             {
-                name: "Powdery Mildew (சாம்பல் நோய்)",
+                name: "Powdery Mildew",
                 accuracy: "95.6%",
-                status: "Curable",
                 statusClass: "badge-curable",
-                statusText: "YES - குணப்படுத்த முடியும்",
-                cure: "சல்ஃபர் (Sulfur powder) அல்லது பொட்டாசியம் பயிகார்பனேட் கரைசல் தெளித்து நோயைக் கட்டுப்படுத்தலாம்."
+                statusText: "YES - Curable",
+                cure: "Spray potassium bicarbonate solution or sulfur-based dust to eradicate fungal growth."
             }
         ];
 
@@ -306,7 +302,7 @@
                 scanLine.style.display = 'block';
                 resultCard.style.display = 'block';
 
-                // Scan every 3 seconds
+                // Automatically scan frame every 3 seconds
                 scanInterval = setInterval(processScan, 3000);
             } catch (err) {
                 alert("Camera Access Denied or Not Available");
@@ -324,16 +320,16 @@
         function processScan() {
             if (!stream) return;
 
-            // Capture frame from video stream
+            // Capture frame from video feed onto canvas
             const context = canvas.getContext('2d');
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-            // Simulation logic matching detection output
+            // Simulation matching detection pipeline
             const detected = diseaseData[Math.floor(Math.random() * diseaseData.length)];
 
-            // Update UI Output
+            // Update UI Output Elements
             diseaseName.textContent = detected.name;
             accuracyVal.textContent = detected.accuracy;
             
