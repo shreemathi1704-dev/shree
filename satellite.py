@@ -1,201 +1,381 @@
-import ee
+import os
+import json
+
 from datetime import datetime, timedelta
 
+import ee
 
-# CHANGE THIS
-# Put your Google Earth Engine Cloud Project ID here.
-PROJECT_ID = "YOUR_PROJECT_ID"
 
-earth_engine_ready = False
+# ==========================================
+# EARTH ENGINE PROJECT
+# ==========================================
 
+PROJECT_ID = os.environ.get(
+    "EE_PROJECT_ID",
+    "YOUR_EARTH_ENGINE_PROJECT_ID"
+)
+
+
+_initialized = False
+
+
+# ==========================================
+# INITIALIZE EARTH ENGINE
+# ==========================================
 
 def initialize_earth_engine():
 
-    global earth_engine_ready
+    global _initialized
 
-    if earth_engine_ready:
+
+    if _initialized:
+
         return
 
-    try:
+
+    service_json =
+        os.environ.get(
+            "EE_SERVICE_ACCOUNT_JSON"
+        )
+
+
+    # ======================================
+    # DEPLOYED SERVER
+    # ======================================
+
+    if service_json:
+
+        info =
+            json.loads(
+                service_json
+            )
+
+
+        credentials =
+            ee.ServiceAccountCredentials(
+
+                info["client_email"],
+
+                key_data=service_json
+
+            )
+
+
+        ee.Initialize(
+
+            credentials=credentials,
+
+            project=PROJECT_ID
+
+        )
+
+
+    # ======================================
+    # LOCAL COMPUTER
+    # ======================================
+
+    else:
 
         ee.Initialize(
             project=PROJECT_ID
         )
 
-        earth_engine_ready = True
 
-        print(
-            "Google Earth Engine connected."
-        )
-
-    except Exception as error:
-
-        print(
-            "Earth Engine authentication required."
-        )
-
-        print(error)
-
-        ee.Authenticate()
-
-        ee.Initialize(
-            project=PROJECT_ID
-        )
-
-        earth_engine_ready = True
-
-        print(
-            "Google Earth Engine connected."
-        )
+    _initialized = True
 
 
-def get_satellite_data(
+# ==========================================
+# NDVI
+# ==========================================
+
+def get_ndvi(
     latitude,
     longitude
 ):
 
     initialize_earth_engine()
 
-    latitude = float(latitude)
-    longitude = float(longitude)
 
-    point = ee.Geometry.Point(
-        [
-            longitude,
-            latitude
-        ]
-    )
+    latitude =
+        float(latitude)
 
-    # Last 60 days
-    end_date = datetime.utcnow()
 
-    start_date = (
-        end_date -
-        timedelta(days=60)
-    )
+    longitude =
+        float(longitude)
 
-    start = start_date.strftime(
-        "%Y-%m-%d"
-    )
 
-    end = end_date.strftime(
-        "%Y-%m-%d"
-    )
+    # ======================================
+    # GPS POINT
+    # ======================================
 
-    # Sentinel-2
+    point =
+        ee.Geometry.Point(
+            [
+                longitude,
+                latitude
+            ]
+        )
+
+
+    # ======================================
+    # DATE RANGE
+    # ======================================
+
+    end_date =
+        datetime.utcnow()
+
+
+    start_date =
+        end_date - timedelta(
+            days=60
+        )
+
+
+    start =
+        start_date.strftime(
+            "%Y-%m-%d"
+        )
+
+
+    end =
+        end_date.strftime(
+            "%Y-%m-%d"
+        )
+
+
+    # ======================================
+    # SENTINEL-2
+    # ======================================
+
     collection = (
+
         ee.ImageCollection(
             "COPERNICUS/S2_SR_HARMONIZED"
         )
-        .filterBounds(point)
+
+        .filterBounds(
+            point
+        )
+
         .filterDate(
             start,
             end
         )
+
         .filter(
             ee.Filter.lt(
                 "CLOUDY_PIXEL_PERCENTAGE",
                 30
             )
         )
+
     )
 
-    number_of_images = (
-        collection
-        .size()
-        .getInfo()
-    )
+
+    # ======================================
+    # IMAGE COUNT
+    # ======================================
+
+    count =
+        int(
+            collection
+            .size()
+            .getInfo()
+        )
+
 
     print(
         "Sentinel-2 images:",
-        number_of_images
+        count
     )
 
-    if number_of_images == 0:
+
+    if count == 0:
 
         return {
-            "success": False,
+
+            "success":
+                False,
+
             "message":
-                "No suitable Sentinel-2 image found."
+                "No suitable Sentinel-2 image found for this location.",
+
+            "latitude":
+                latitude,
+
+            "longitude":
+                longitude,
+
+            "images_found":
+                0
+
         }
 
-    # Median image
-    image = collection.median()
 
-    # NDVI = (NIR - RED) / (NIR + RED)
+    # ======================================
+    # MEDIAN IMAGE
+    # ======================================
+
+    image =
+        collection.median()
+
+
+    # ======================================
+    # NDVI
+    #
+    # NDVI = (NIR - RED)
+    #        --------------
+    #        (NIR + RED)
     #
     # Sentinel-2:
     # B8 = NIR
     # B4 = RED
+    # ======================================
 
     ndvi_image = (
+
         image
         .normalizedDifference(
-            ["B8", "B4"]
+            [
+                "B8",
+                "B4"
+            ]
         )
-        .rename("NDVI")
+
+        .rename(
+            "NDVI"
+        )
+
     )
+
+
+    # ======================================
+    # GET VALUE
+    # ======================================
 
     result = (
+
         ndvi_image
+
         .reduceRegion(
-            reducer=ee.Reducer.mean(),
-            geometry=point,
-            scale=10,
-            maxPixels=100000
+
+            reducer=
+                ee.Reducer.mean(),
+
+            geometry=
+                point,
+
+            scale=
+                10,
+
+            maxPixels=
+                100000
+
         )
+
         .getInfo()
+
     )
 
-    ndvi = result.get(
-        "NDVI"
-    )
+
+    ndvi =
+        result.get(
+            "NDVI"
+        )
+
 
     if ndvi is None:
 
         return {
-            "success": False,
+
+            "success":
+                False,
+
             "message":
-                "NDVI value unavailable."
+                "NDVI value unavailable at this location.",
+
+            "latitude":
+                latitude,
+
+            "longitude":
+                longitude,
+
+            "images_found":
+                count
+
         }
 
-    ndvi = round(
-        float(ndvi),
-        3
-    )
 
-    # Field condition
+    ndvi =
+        round(
+            float(ndvi),
+            3
+        )
+
+
+    # ======================================
+    # FIELD CONDITION
+    # ======================================
+
     if ndvi < 0.20:
 
-        field_status = "Very Low Vegetation"
-        field_condition = "Critical"
+        field_status =
+            "Very Low Vegetation"
+
+        field_condition =
+            "Critical"
+
 
     elif ndvi < 0.35:
 
-        field_status = "Low Vegetation"
-        field_condition = "High Stress"
+        field_status =
+            "Low Vegetation"
+
+        field_condition =
+            "High Stress"
+
 
     elif ndvi < 0.50:
 
-        field_status = "Moderate Vegetation"
-        field_condition = "Moderate Stress"
+        field_status =
+            "Moderate Vegetation"
+
+        field_condition =
+            "Moderate Stress"
+
 
     elif ndvi < 0.70:
 
-        field_status = "Healthy Vegetation"
-        field_condition = "Healthy"
+        field_status =
+            "Healthy Vegetation"
+
+        field_condition =
+            "Healthy"
+
 
     else:
 
-        field_status = "Very Healthy Vegetation"
-        field_condition = "Very Healthy"
+        field_status =
+            "Very Healthy Vegetation"
+
+        field_condition =
+            "Very Healthy"
+
+
+    # ======================================
+    # RESPONSE
+    # ======================================
 
     return {
 
-        "success": True,
+        "success":
+            True,
 
         "satellite":
-            "Sentinel-2",
+            "Sentinel-2 SR Harmonized",
+
+        "message":
+            "Connected to Google Earth Engine. NDVI calculated from Sentinel-2 imagery.",
 
         "latitude":
             latitude,
@@ -213,5 +393,6 @@ def get_satellite_data(
             field_condition,
 
         "images_found":
-            number_of_images
+            count
+
     }

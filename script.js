@@ -1,37 +1,180 @@
+/*
+==================================================
+ AGRIGUARD AI
+ FRONTEND JAVASCRIPT
+==================================================
+*/
+
+/*
+ IMPORTANT:
+
+ FOR LOCAL TESTING:
+ http://127.0.0.1:5000
+
+ AFTER DEPLOYING BACKEND:
+ change this to your Render backend URL.
+
+ Example:
+
+ const BACKEND_URL =
+ "https://agriguard-ai-api.onrender.com";
+*/
+
+const BACKEND_URL =
+    "http://127.0.0.1:5000";
+
+
 let stream = null;
 
-let currentCamera = "environment";
+let facingMode = "environment";
 
-let capturedBlob = null;
+let selectedFile = null;
 
-let currentLatitude = null;
+let coordinates = {
+    latitude: null,
+    longitude: null
+};
 
-let currentLongitude = null;
+
+/* SHORTCUT */
+
+function $(id) {
+
+    return document.getElementById(id);
+
+}
 
 
-/* -------------------------------------------
-   START CAMERA
-------------------------------------------- */
+/*
+==================================================
+ PAGE LOAD
+==================================================
+*/
+
+window.addEventListener(
+    "load",
+    function () {
+
+        checkBackend();
+
+        getGPS();
+
+    }
+);
+
+
+/*
+==================================================
+ CHECK BACKEND
+==================================================
+*/
+
+async function checkBackend() {
+
+    try {
+
+        const response =
+            await fetch(
+                `${BACKEND_URL}/health`,
+                {
+                    cache: "no-store"
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        if (response.ok) {
+
+            $("backendStatus").innerHTML =
+                `
+                <span
+                    style="
+                    background:#22a447;
+                    ">
+                </span>
+
+                AI Service Online
+                `;
+
+        } else {
+
+            showBackendOffline();
+
+        }
+
+    }
+
+    catch (error) {
+
+        console.log(
+            "Backend not connected:",
+            error
+        );
+
+        showBackendOffline();
+
+    }
+
+}
+
+
+/*
+==================================================
+ BACKEND OFFLINE MESSAGE
+==================================================
+*/
+
+function showBackendOffline() {
+
+    $("backendStatus").innerHTML =
+        `
+        <span
+            style="
+            background:#e39b00;
+            ">
+        </span>
+
+        Start Backend
+        `;
+
+}
+
+
+/*
+==================================================
+ START CAMERA
+==================================================
+*/
 
 async function startCamera() {
 
-    const video =
-        document.getElementById("camera");
+    if (
+        !navigator.mediaDevices ||
+        !navigator.mediaDevices.getUserMedia
+    ) {
 
-    const message =
-        document.getElementById("cameraMessage");
+        $("cameraMessage").innerHTML =
+            `
+            <strong>
+                ⚠️ Camera unavailable
+            </strong>
+
+            <span>
+                Use Chrome or Edge with HTTPS.
+            </span>
+            `;
+
+        return;
+
+    }
 
 
     try {
 
-        // Stop previous camera
-        if (stream) {
-
-            stream.getTracks().forEach(
-                track => track.stop()
-            );
-
-        }
+        stopCamera();
 
 
         stream =
@@ -40,7 +183,7 @@ async function startCamera() {
                 video: {
 
                     facingMode: {
-                        ideal: currentCamera
+                        ideal: facingMode
                     },
 
                     width: {
@@ -58,51 +201,109 @@ async function startCamera() {
             });
 
 
-        video.srcObject =
+        $("video").srcObject =
             stream;
 
 
-        message.style.display =
+        $("video").style.display =
+            "block";
+
+
+        $("captured").style.display =
             "none";
 
 
-    } catch (error) {
-
-        console.error(
-            "Camera error:",
-            error
-        );
+        $("cameraMessage").style.display =
+            "none";
 
 
-        message.innerHTML =
-            "❌ Camera access denied.<br>Allow camera permission.";
+        $("startBtn").textContent =
+            "✓ Camera Running";
+
+    }
+
+    catch (error) {
+
+        console.error(error);
 
 
-        message.style.display =
-            "block";
+        $("cameraMessage").innerHTML =
+            `
+            <strong>
+                📷 Camera permission required
+            </strong>
+
+            <span>
+                Click Allow when the browser asks.
+            </span>
+            `;
+
+
+        $("cameraMessage").style.display =
+            "flex";
+
+
+        $("startBtn").textContent =
+            "▶ Start Camera";
 
     }
 
 }
 
 
-/* -------------------------------------------
-   SWITCH CAMERA
-------------------------------------------- */
+/*
+==================================================
+ STOP CAMERA
+==================================================
+*/
+
+function stopCamera() {
+
+    if (stream) {
+
+        stream
+            .getTracks()
+            .forEach(
+                track =>
+                    track.stop()
+            );
+
+        stream = null;
+
+    }
+
+
+    if ($("startBtn")) {
+
+        $("startBtn").textContent =
+            "▶ Start Camera";
+
+    }
+
+}
+
+
+/*
+==================================================
+ SWITCH CAMERA
+==================================================
+*/
 
 async function switchCamera() {
 
     if (
-        currentCamera ===
+        facingMode ===
         "environment"
     ) {
 
-        currentCamera =
+        facingMode =
             "user";
 
-    } else {
+    }
 
-        currentCamera =
+    else {
+
+        facingMode =
             "environment";
 
     }
@@ -113,23 +314,22 @@ async function switchCamera() {
 }
 
 
-/* -------------------------------------------
-   CAPTURE IMAGE
-------------------------------------------- */
+/*
+==================================================
+ CAPTURE PHOTO
+==================================================
+*/
 
-function captureImage() {
+function capturePhoto() {
 
     const video =
-        document.getElementById("camera");
+        $("video");
 
 
-    if (
-        !video.videoWidth ||
-        !video.videoHeight
-    ) {
+    if (!video.videoWidth) {
 
         alert(
-            "Camera is not ready."
+            "Please start the camera first."
         );
 
         return;
@@ -138,18 +338,23 @@ function captureImage() {
 
 
     const canvas =
-        document.createElement("canvas");
+        document.createElement(
+            "canvas"
+        );
 
 
     canvas.width =
         video.videoWidth;
+
 
     canvas.height =
         video.videoHeight;
 
 
     const context =
-        canvas.getContext("2d");
+        canvas.getContext(
+            "2d"
+        );
 
 
     context.drawImage(
@@ -162,55 +367,44 @@ function captureImage() {
 
 
     canvas.toBlob(
-        function(blob) {
 
-            capturedBlob =
-                blob;
+        function (blob) {
 
-
-            const imageURL =
-                URL.createObjectURL(
-                    blob
+            selectedFile =
+                new File(
+                    [blob],
+                    "crop-camera.jpg",
+                    {
+                        type:
+                            "image/jpeg"
+                    }
                 );
 
 
-            document.getElementById(
-                "preview"
-            ).src = imageURL;
-
-
-            document.getElementById(
-                "previewSection"
-            ).classList.remove(
-                "hidden"
+            showPreview(
+                selectedFile
             );
 
-
-            document.getElementById(
-                "status"
-            ).innerText =
-                "📸 Image captured. Ready for AI analysis.";
-
-
-            getGPS();
-
         },
+
         "image/jpeg",
-        0.90
+
+        0.92
+
     );
 
 }
 
 
-/* -------------------------------------------
-   IMAGE UPLOAD
-------------------------------------------- */
+/*
+==================================================
+ UPLOAD IMAGE
+==================================================
+*/
 
-document.getElementById(
-    "imageUpload"
-).addEventListener(
+$("upload").addEventListener(
     "change",
-    function(event) {
+    function (event) {
 
         const file =
             event.target.files[0];
@@ -223,84 +417,127 @@ document.getElementById(
         }
 
 
-        capturedBlob =
+        if (
+            !file.type.startsWith(
+                "image/"
+            )
+        ) {
+
+            alert(
+                "Please select an image."
+            );
+
+            return;
+
+        }
+
+
+        selectedFile =
             file;
 
 
-        const imageURL =
-            URL.createObjectURL(
-                file
-            );
-
-
-        document.getElementById(
-            "preview"
-        ).src = imageURL;
-
-
-        document.getElementById(
-            "previewSection"
-        ).classList.remove(
-            "hidden"
+        showPreview(
+            file
         );
-
-
-        document.getElementById(
-            "status"
-        ).innerText =
-            "🖼️ Image selected. Ready for analysis.";
-
-
-        getGPS();
 
     }
 );
 
 
-/* -------------------------------------------
-   GPS
-------------------------------------------- */
+/*
+==================================================
+ SHOW PREVIEW
+==================================================
+*/
+
+function showPreview(file) {
+
+    const url =
+        URL.createObjectURL(
+            file
+        );
+
+
+    $("preview").src =
+        url;
+
+
+    $("previewCard")
+        .classList
+        .remove(
+            "hidden"
+        );
+
+
+    getGPS();
+
+
+    $("previewCard")
+        .scrollIntoView({
+            behavior: "smooth",
+            block: "center"
+        });
+
+}
+
+
+/*
+==================================================
+ GET GPS
+==================================================
+*/
 
 function getGPS() {
 
-    if (!navigator.geolocation) {
+    if (
+        !navigator.geolocation
+    ) {
 
-        console.log(
-            "GPS not supported."
-        );
+        $("gpsLine").textContent =
+            "📍 GPS not supported.";
 
         return;
 
     }
 
 
+    $("gpsLine").textContent =
+        "📍 Getting GPS location...";
+
+
     navigator.geolocation.getCurrentPosition(
 
-        function(position) {
+        function (position) {
 
-            currentLatitude =
+            coordinates.latitude =
                 position.coords.latitude;
 
-            currentLongitude =
+
+            coordinates.longitude =
                 position.coords.longitude;
 
 
-            console.log(
-                "GPS:",
-                currentLatitude,
-                currentLongitude
-            );
+            $("gpsLine").textContent =
+                `📍 GPS Ready:
+                ${coordinates.latitude.toFixed(6)},
+                ${coordinates.longitude.toFixed(6)}`;
 
         },
 
-        function(error) {
+
+        function (error) {
 
             console.log(
                 "GPS error:",
-                error
+                error.message
             );
 
+
+            $("gpsLine").textContent =
+                "📍 GPS permission denied. Satellite analysis unavailable.";
+
         },
+
 
         {
 
@@ -308,7 +545,7 @@ function getGPS() {
                 true,
 
             timeout:
-                10000,
+                15000,
 
             maximumAge:
                 0
@@ -320,16 +557,18 @@ function getGPS() {
 }
 
 
-/* -------------------------------------------
-   ANALYZE
-------------------------------------------- */
+/*
+==================================================
+ ANALYZE CROP
+==================================================
+*/
 
-async function analyzeImage() {
+async function analyzeCrop() {
 
-    if (!capturedBlob) {
+    if (!selectedFile) {
 
         alert(
-            "Please capture or upload an image."
+            "Please capture or upload a crop image first."
         );
 
         return;
@@ -337,62 +576,63 @@ async function analyzeImage() {
     }
 
 
-    const status =
-        document.getElementById(
-            "status"
+    $("loading")
+        .classList
+        .remove(
+            "hidden"
         );
 
 
-    status.innerText =
-        "🤖 AI is analyzing the crop...";
-
-
-    document.getElementById(
-        "scanLine"
-    ).style.display =
-        "none";
-
-
-    const formData =
-        new FormData();
-
-
-    formData.append(
-        "image",
-        capturedBlob,
-        "crop.jpg"
-    );
-
-
-    if (
-        currentLatitude !== null
-    ) {
-
-        formData.append(
-            "latitude",
-            currentLatitude
+    $("result")
+        .classList
+        .add(
+            "hidden"
         );
 
-    }
 
-
-    if (
-        currentLongitude !== null
-    ) {
-
-        formData.append(
-            "longitude",
-            currentLongitude
-        );
-
-    }
+    $("loadingTitle").textContent =
+        "Connecting to AI + Sentinel-2...";
 
 
     try {
 
+        const formData =
+            new FormData();
+
+
+        formData.append(
+            "image",
+            selectedFile
+        );
+
+
+        if (
+            coordinates.latitude !== null
+        ) {
+
+            formData.append(
+                "latitude",
+                coordinates.latitude
+            );
+
+        }
+
+
+        if (
+            coordinates.longitude !== null
+        ) {
+
+            formData.append(
+                "longitude",
+                coordinates.longitude
+            );
+
+        }
+
+
         const response =
             await fetch(
-                "/predict",
+                `${BACKEND_URL}/analyze`,
                 {
 
                     method:
@@ -409,196 +649,227 @@ async function analyzeImage() {
             await response.json();
 
 
-        if (!data.success) {
+        if (
+            !response.ok ||
+            !data.success
+        ) {
 
-            status.innerText =
-                "❌ " + data.message;
-
-            return;
+            throw new Error(
+                data.message ||
+                "Analysis failed."
+            );
 
         }
 
 
-        showResult(
+        displayResult(
             data
         );
 
+    }
 
-        status.innerText =
-            "✅ Analysis completed.";
-
-
-    } catch (error) {
+    catch (error) {
 
         console.error(
             error
         );
 
 
-        status.innerText =
-            "❌ Server connection error.";
+        alert(
+            "Backend connection failed.\n\n" +
+            "Check that Flask is running and " +
+            "BACKEND_URL is correct.\n\n" +
+            error.message
+        );
+
+    }
+
+    finally {
+
+        $("loading")
+            .classList
+            .add(
+                "hidden"
+            );
 
     }
 
 }
 
 
-/* -------------------------------------------
-   SHOW RESULT
-------------------------------------------- */
+/*
+==================================================
+ DISPLAY RESULT
+==================================================
+*/
 
-function showResult(data) {
+function displayResult(data) {
 
-    const result =
-        document.getElementById(
-            "result"
+    const ai =
+        data.crop_disease || {};
+
+
+    const satellite =
+        data.satellite || {};
+
+
+    $("disease").textContent =
+        ai.disease ||
+        "Model unavailable";
+
+
+    $("mode").textContent =
+        `Prediction mode:
+        ${ai.prediction_mode || "AI"}`;
+
+
+    $("severity").textContent =
+        ai.severity ||
+        "Unknown";
+
+
+    $("confidence").textContent =
+        ai.confidence !== undefined
+            ? `${ai.confidence}%`
+            : "—";
+
+
+    $("ndvi").textContent =
+        satellite.ndvi !== undefined
+            ? satellite.ndvi
+            : "—";
+
+
+    $("fieldCondition").textContent =
+        satellite.field_condition ||
+        "—";
+
+
+    $("description").textContent =
+        ai.description ||
+        "—";
+
+
+    $("recommendation").textContent =
+        ai.recommendation ||
+        "—";
+
+
+    $("satelliteSource").textContent =
+        satellite.message ||
+        "Sentinel-2 analysis";
+
+
+    $("satStatus").textContent =
+        satellite.success
+            ? "Connected"
+            : "Unavailable";
+
+
+    if (
+        satellite.success
+    ) {
+
+        $("satStatus").style.background =
+            "#e4f5e7";
+
+        $("satStatus").style.color =
+            "#237337";
+
+    }
+
+    else {
+
+        $("satStatus").style.background =
+            "#fff0df";
+
+        $("satStatus").style.color =
+            "#8a5b15";
+
+    }
+
+
+    $("lat").textContent =
+        satellite.latitude !== undefined
+            ? Number(
+                satellite.latitude
+            ).toFixed(6)
+            : "—";
+
+
+    $("lon").textContent =
+        satellite.longitude !== undefined
+            ? Number(
+                satellite.longitude
+            ).toFixed(6)
+            : "—";
+
+
+    $("images").textContent =
+        satellite.images_found !== undefined
+            ? satellite.images_found
+            : "—";
+
+
+    $("vegetation").textContent =
+        satellite.field_status ||
+        "—";
+
+
+    $("result")
+        .classList
+        .remove(
+            "hidden"
         );
 
 
-    result.classList.remove(
-        "hidden"
-    );
+    $("result")
+        .scrollIntoView({
+            behavior: "smooth"
+        });
+
+}
 
 
-    const disease =
-        data.crop_disease;
+/*
+==================================================
+ RESET
+==================================================
+*/
+
+function resetAll() {
+
+    selectedFile =
+        null;
 
 
-    document.getElementById(
-        "disease"
-    ).innerText =
-        disease.disease;
+    $("upload").value =
+        "";
 
 
-    document.getElementById(
-        "confidence"
-    ).innerText =
-        disease.confidence +
-        "%";
+    $("previewCard")
+        .classList
+        .add(
+            "hidden"
+        );
 
 
-    document.getElementById(
-        "severity"
-    ).innerText =
-        disease.severity;
+    $("result")
+        .classList
+        .add(
+            "hidden"
+        );
 
 
-    document.getElementById(
-        "description"
-    ).innerText =
-        disease.description;
+    startCamera();
 
 
-    document.getElementById(
-        "recommendation"
-    ).innerText =
-        disease.recommendation;
+    window.scrollTo({
 
+        top: 0,
 
-    /* GPS */
-
-    if (data.gps) {
-
-        document.getElementById(
-            "latitude"
-        ).innerText =
-            data.gps.latitude || "-";
-
-
-        document.getElementById(
-            "longitude"
-        ).innerText =
-            data.gps.longitude || "-";
-
-    }
-
-
-    /* SATELLITE */
-
-    if (
-        data.satellite &&
-        data.satellite.success
-    ) {
-
-        const satellite =
-            data.satellite;
-
-
-        document.getElementById(
-            "ndvi"
-        ).innerText =
-            satellite.ndvi;
-
-
-        document.getElementById(
-            "vegetation"
-        ).innerText =
-            satellite.field_status;
-
-
-        document.getElementById(
-            "fieldCondition"
-        ).innerText =
-            satellite.field_condition;
-
-
-        document.getElementById(
-            "imagesFound"
-        ).innerText =
-            satellite.images_found;
-
-
-    } else {
-
-        document.getElementById(
-            "ndvi"
-        ).innerText =
-            "Unavailable";
-
-
-        document.getElementById(
-            "vegetation"
-        ).innerText =
-            "Unavailable";
-
-
-        document.getElementById(
-            "fieldCondition"
-        ).innerText =
-            "Unavailable";
-
-
-        document.getElementById(
-            "imagesFound"
-        ).innerText =
-            "-";
-
-    }
-
-
-    // Scroll to result
-
-    result.scrollIntoView({
-
-        behavior:
-            "smooth"
+        behavior: "smooth"
 
     });
 
 }
-
-
-/* -------------------------------------------
-   START
-------------------------------------------- */
-
-window.addEventListener(
-    "load",
-    function() {
-
-        startCamera();
-
-        getGPS();
-
-    }
-);

@@ -1,35 +1,41 @@
+import os
+import uuid
+
 from flask import (
     Flask,
-    render_template,
     request,
     jsonify
 )
 
-import os
-import uuid
+from flask_cors import CORS
+
+from PIL import Image
 
 from model import predict_disease
+
 from disease_info import get_disease_info
-from satellite import get_satellite_data
+
+from satellite import get_ndvi
 
 
 app = Flask(__name__)
 
+CORS(
+    app,
+    resources={
+        r"/*": {
+            "origins": "*"
+        }
+    }
+)
 
-# Upload folder
+
+# ==========================================
+# UPLOAD FOLDER
+# ==========================================
+
 UPLOAD_FOLDER = "uploads"
 
-app.config[
-    "UPLOAD_FOLDER"
-] = UPLOAD_FOLDER
-
-# Maximum upload = 10 MB
-app.config[
-    "MAX_CONTENT_LENGTH"
-] = 10 * 1024 * 1024
-
-
-# Create upload folder
 os.makedirs(
     UPLOAD_FOLDER,
     exist_ok=True
@@ -44,55 +50,30 @@ ALLOWED_EXTENSIONS = {
 }
 
 
-def allowed_file(filename):
-
-    return (
-        "." in filename
-        and
-        filename.rsplit(
-            ".",
-            1
-        )[1].lower()
-        in ALLOWED_EXTENSIONS
-    )
-
-
-# ------------------------------------------------
+# ==========================================
 # HOME
-# ------------------------------------------------
+# ==========================================
 
-@app.route("/")
+@app.route("/", methods=["GET"])
 def home():
-
-    return render_template(
-        "index.html"
-    )
-
-
-# ------------------------------------------------
-# HEALTH CHECK
-# ------------------------------------------------
-
-@app.route("/health")
-def health():
 
     return jsonify({
 
-        "success": True,
-
         "application":
-            "CropCare AI",
+            "AgriGuard AI",
 
         "status":
             "running",
 
         "services": [
 
-            "Google Lens Style Camera",
+            "Crop Disease Detection",
 
-            "CNN Crop Disease Detection",
+            "CNN AI",
 
             "GPS",
+
+            "Google Earth Engine",
 
             "Sentinel-2 NDVI"
 
@@ -101,179 +82,236 @@ def health():
     })
 
 
-# ------------------------------------------------
-# CROP IMAGE PREDICTION
-# ------------------------------------------------
+# ==========================================
+# HEALTH CHECK
+# ==========================================
 
 @app.route(
-    "/predict",
+    "/health",
+    methods=["GET"]
+)
+def health():
+
+    return jsonify({
+
+        "status":
+            "running",
+
+        "application":
+            "AgriGuard AI",
+
+        "cnn":
+            "available",
+
+        "satellite":
+            "Google Earth Engine / Sentinel-2"
+
+    })
+
+
+# ==========================================
+# ANALYZE
+# ==========================================
+
+@app.route(
+    "/analyze",
     methods=["POST"]
 )
-def predict():
+def analyze():
 
     try:
 
-        # Check image
-        if "image" not in request.files:
+        # ------------------------------
+        # IMAGE
+        # ------------------------------
 
-            return jsonify({
+        image =
+            request.files.get(
+                "image"
+            )
 
-                "success": False,
-
-                "message":
-                    "No image received."
-
-            })
-
-
-        image = request.files[
-            "image"
-        ]
-
-
-        if image.filename == "":
-
-            return jsonify({
-
-                "success": False,
-
-                "message":
-                    "Please select an image."
-
-            })
-
-
-        # Check file type
-        if not allowed_file(
-            image.filename
+        if (
+            image is None or
+            image.filename == ""
         ):
 
             return jsonify({
 
-                "success": False,
+                "success":
+                    False,
 
                 "message":
-                    "Invalid image format."
+                    "Please capture or upload a crop image."
 
-            })
-
-
-        # Create unique filename
-        extension = os.path.splitext(
-            image.filename
-        )[1].lower()
-
-        filename = (
-            str(uuid.uuid4())
-            +
-            extension
-        )
-
-        image_path = os.path.join(
-            app.config[
-                "UPLOAD_FOLDER"
-            ],
-            filename
-        )
+            }), 400
 
 
-        # Save image
+        # ------------------------------
+        # FILE EXTENSION
+        # ------------------------------
+
+        if "." not in image.filename:
+
+            return jsonify({
+
+                "success":
+                    False,
+
+                "message":
+                    "Invalid image file."
+
+            }), 400
+
+
+        extension =
+            image.filename.rsplit(
+                ".",
+                1
+            )[1].lower()
+
+
+        if extension not in ALLOWED_EXTENSIONS:
+
+            return jsonify({
+
+                "success":
+                    False,
+
+                "message":
+                    "Only JPG, JPEG, PNG and WEBP are allowed."
+
+            }), 400
+
+
+        # ------------------------------
+        # CREATE FILE
+        # ------------------------------
+
+        filename =
+            f"{uuid.uuid4().hex}.{extension}"
+
+
+        image_path =
+            os.path.join(
+                UPLOAD_FOLDER,
+                filename
+            )
+
+
         image.save(
             image_path
         )
 
 
-        print(
-            "Image saved:",
+        # ------------------------------
+        # VERIFY IMAGE
+        # ------------------------------
+
+        with Image.open(
             image_path
-        )
+        ) as img:
+
+            img.verify()
 
 
-        # ----------------------------------------
+        # ------------------------------
         # CNN PREDICTION
-        # ----------------------------------------
+        # ------------------------------
 
-        prediction = predict_disease(
-            image_path
-        )
-
-
-        disease = prediction[
-            "disease"
-        ]
-
-        confidence = prediction[
-            "confidence"
-        ]
+        prediction =
+            predict_disease(
+                image_path
+            )
 
 
-        # ----------------------------------------
+        disease =
+            prediction["disease"]
+
+
+        # ------------------------------
         # DISEASE INFORMATION
-        # ----------------------------------------
+        # ------------------------------
 
-        info = get_disease_info(
-            disease
-        )
+        info =
+            get_disease_info(
+                disease
+            )
 
 
-        # ----------------------------------------
+        # ------------------------------
         # GPS
-        # ----------------------------------------
+        # ------------------------------
 
-        latitude = request.form.get(
-            "latitude"
-        )
-
-        longitude = request.form.get(
-            "longitude"
-        )
+        latitude =
+            request.form.get(
+                "latitude"
+            )
 
 
-        satellite_result = None
+        longitude =
+            request.form.get(
+                "longitude"
+            )
 
 
-        # ----------------------------------------
+        satellite = {
+
+            "success":
+                False,
+
+            "message":
+                "GPS not provided. Allow location permission for Sentinel-2 analysis."
+
+        }
+
+
+        # ------------------------------
         # SATELLITE
-        # ----------------------------------------
+        # ------------------------------
 
         if (
-            latitude
-            and
+            latitude and
             longitude
         ):
 
             try:
 
-                satellite_result = (
-                    get_satellite_data(
-                        latitude,
-                        longitude
-                    )
-                )
+                satellite =
+                    get_ndvi(
 
-            except Exception as satellite_error:
+                        float(latitude),
+
+                        float(longitude)
+
+                    )
+
+            except Exception as error:
 
                 print(
                     "Satellite error:",
-                    satellite_error
+                    error
                 )
 
-                satellite_result = {
+
+                satellite = {
 
                     "success":
                         False,
 
                     "message":
-                        "Satellite analysis failed."
+                        "Satellite analysis failed.",
+
+                    "error":
+                        str(error)
 
                 }
 
 
-        # ----------------------------------------
-        # FINAL RESPONSE
-        # ----------------------------------------
+        # ------------------------------
+        # RESPONSE
+        # ------------------------------
 
-        response = {
+        result = {
 
             "success":
                 True,
@@ -281,10 +319,13 @@ def predict():
             "crop_disease": {
 
                 "disease":
-                    disease,
+                    prediction["disease"],
 
                 "confidence":
-                    confidence,
+                    prediction["confidence"],
+
+                "prediction_mode":
+                    prediction["mode"],
 
                 "severity":
                     info["severity"],
@@ -293,50 +334,25 @@ def predict():
                     info["description"],
 
                 "recommendation":
-                    info["recommendation"],
-
-                "prediction_mode":
-                    prediction["mode"]
-
-            },
-
-            "gps": {
-
-                "latitude":
-                    latitude,
-
-                "longitude":
-                    longitude
+                    info["recommendation"]
 
             },
 
             "satellite":
-                satellite_result
+                satellite
 
         }
 
 
-        # Delete temporary image
-        try:
-
-            os.remove(
-                image_path
-            )
-
-        except Exception:
-
-            pass
-
-
         return jsonify(
-            response
+            result
         )
 
 
     except Exception as error:
 
         print(
-            "Prediction error:",
+            "ANALYSIS ERROR:",
             error
         )
 
@@ -347,25 +363,55 @@ def predict():
                 False,
 
             "message":
-                "Prediction failed.",
+                "Analysis failed.",
 
             "error":
                 str(error)
 
-        })
+        }), 500
 
 
-# ------------------------------------------------
-# RUN
-# ------------------------------------------------
+    finally:
+
+        # ------------------------------
+        # DELETE UPLOAD
+        # ------------------------------
+
+        try:
+
+            if os.path.exists(
+                image_path
+            ):
+
+                os.remove(
+                    image_path
+                )
+
+        except Exception:
+
+            pass
+
+
+# ==========================================
+# RUN SERVER
+# ==========================================
 
 if __name__ == "__main__":
+
+    port =
+        int(
+            os.environ.get(
+                "PORT",
+                5000
+            )
+        )
+
 
     app.run(
 
         host="0.0.0.0",
 
-        port=5000,
+        port=port,
 
         debug=True
 

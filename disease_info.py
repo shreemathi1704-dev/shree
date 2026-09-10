@@ -1,85 +1,124 @@
 DISEASE_INFO = {
 
     "Healthy": {
-        "description":
-            "The crop leaf appears healthy with no major visible disease symptoms.",
 
         "severity":
-            "None",
+            "Healthy",
+
+        "description":
+            "The crop leaf appears healthy based on the AI classification.",
 
         "recommendation":
-            "Continue regular monitoring, proper irrigation, balanced nutrition and good field management."
+            "Continue regular monitoring, proper irrigation, balanced nutrition and good crop management."
+
     },
+
 
     "Tomato Early Blight": {
-        "description":
-            "Early blight is a fungal disease that can cause dark circular lesions and leaf damage.",
 
         "severity":
             "Moderate",
 
+        "description":
+            "The AI classification is consistent with characteristics commonly associated with tomato early blight.",
+
         "recommendation":
-            "Remove severely affected leaves, improve airflow around plants and avoid unnecessary overhead watering. Consult a local agricultural expert for treatment decisions."
+            "Remove severely affected leaves where practical, improve airflow and avoid unnecessary overhead watering. Consult local agricultural guidance."
+
     },
+
 
     "Tomato Late Blight": {
-        "description":
-            "Late blight can produce dark lesions and may spread rapidly under favorable environmental conditions.",
 
         "severity":
             "High",
 
+        "description":
+            "The AI classification is consistent with characteristics commonly associated with tomato late blight.",
+
         "recommendation":
-            "Monitor affected plants and nearby plants carefully. Remove severely infected material where appropriate and seek local agricultural guidance."
+            "Monitor affected and nearby plants carefully and seek region-specific agricultural guidance promptly."
+
     },
 
+
     "Potato Early Blight": {
-        "description":
-            "Potato early blight commonly produces dark lesions on leaves.",
 
         "severity":
             "Moderate",
 
+        "description":
+            "The AI classification is consistent with characteristics commonly associated with potato early blight.",
+
         "recommendation":
-            "Remove severely affected plant material and maintain good field sanitation."
+            "Maintain field sanitation, remove severely affected material where appropriate and monitor nearby plants."
+
     },
+
 
     "Potato Late Blight": {
-        "description":
-            "Potato late blight can spread rapidly and cause serious crop damage.",
 
         "severity":
             "High",
+
+        "description":
+            "The AI classification is consistent with characteristics commonly associated with potato late blight.",
 
         "recommendation":
-            "Monitor the field carefully and obtain region-specific disease-management advice from an agricultural expert."
+            "Monitor the crop carefully and seek local agricultural guidance for appropriate disease-management decisions."
+
     },
 
+
     "Rice Blast": {
-        "description":
-            "Rice blast is a fungal disease that can affect rice leaves and other plant parts.",
 
         "severity":
             "High",
+
+        "description":
+            "The AI classification is consistent with characteristics commonly associated with rice blast.",
 
         "recommendation":
             "Monitor the crop regularly and follow region-specific agricultural disease-management recommendations."
+
+    },
+
+
+    "AI model not installed": {
+
+        "severity":
+            "Not Available",
+
+        "description":
+            "The backend is working, but a trained crop disease CNN model has not been installed.",
+
+        "recommendation":
+            "Place your crop_disease_model.keras file inside backend/models/."
+
     }
+
 }
 
 
-def get_disease_info(disease):
+def get_disease_info(
+    disease
+):
 
     return DISEASE_INFO.get(
+
         disease,
+
         {
-            "description":
-                "Information for this prediction is unavailable.",
 
             "severity":
                 "Unknown",
 
+            "description":
+                "No information is available for this model class.",
+
             "recommendation":
-                "Consult an agricultural expert."
+                "Consult a qualified agricultural expert."
+
         }
+
     )
