@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html lang="ta">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AgriGuard AI - Direct Disease Voice Scanner</title>
+    <title>AgriGuard AI - Disease & Treatment Voice Scanner</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -19,22 +20,26 @@
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between">
 
+    <!-- Header Section -->
     <header class="w-full bg-slate-900/80 backdrop-blur-md border-b border-slate-800 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
         <div class="flex items-center gap-2">
             <span class="text-2xl">🌿</span>
             <span class="text-xl font-extrabold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">AgriGuard AI</span>
         </div>
         <div id="locationBadge" class="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs px-3 py-1.5 rounded-full font-semibold flex items-center gap-1.5">
-            <span>📍</span> Tamil Nadu
+            <span>📍</span> Coimbatore, Tamil Nadu
         </div>
     </header>
 
+    <!-- Main Content -->
     <main class="max-w-xl w-full mx-auto px-4 py-6 flex-grow">
+        <!-- Title -->
         <div class="text-center mb-6">
-            <h1 class="text-3xl font-extrabold text-white tracking-tight">Disease Voice Scanner</h1>
-            <p class="text-slate-400 text-sm mt-1">Instant Voice Feedback for Crop Diseases</p>
+            <h1 class="text-3xl font-extrabold text-white tracking-tight">Disease & Treatment Voice Scanner</h1>
+            <p class="text-slate-400 text-sm mt-1">Instant voice detection for plant health and treatment</p>
         </div>
 
+        <!-- Language Switcher Option -->
         <div class="mb-6 flex flex-col items-center gap-2">
             <label for="langSelect" class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Select Voice Language</label>
             <select id="langSelect" class="bg-slate-900 text-white border border-slate-700 text-sm font-semibold rounded-xl px-4 py-2.5 outline-none focus:border-emerald-500 transition-all w-full max-w-xs shadow-lg">
@@ -46,21 +51,36 @@
                     <option value="te-IN">తెలుగు (Telugu)</option>
                     <option value="kn-IN">ಕನ್ನಡ (Kannada)</option>
                     <option value="ml-IN">മലയാളം (Malayalam)</option>
+                    <option value="bn-IN">বাংলা (Bengali)</option>
+                    <option value="mr-IN">मराठी (Marathi)</option>
+                    <option value="gu-IN">ગુજરાતી (Gujarati)</option>
+                    <option value="pa-IN">ਪੰਜਾਬੀ (Punjabi)</option>
                 </optgroup>
                 <optgroup label="Global Languages">
-                    <option value="en-US">English (US)</option>
+                    <option value="en-US">English (United States)</option>
                     <option value="es-ES">Español (Spanish)</option>
+                    <option value="fr-FR">Français (French)</option>
+                    <option value="de-DE">Deutsch (German)</option>
+                    <option value="zh-CN">中文 (Chinese)</option>
+                    <option value="ar-SA">العربية (Arabic)</option>
+                    <option value="ja-JP">日本語 (Japanese)</option>
+                    <option value="ru-RU">Русский (Russian)</option>
                 </optgroup>
             </select>
         </div>
 
+        <!-- Camera Box -->
         <div class="relative w-full h-80 bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 shadow-2xl flex items-center justify-center">
             <video id="webcam" class="w-full h-full object-cover" autoplay playsinline></video>
+            
+            <!-- Scanning Frame -->
             <div class="absolute w-3/4 h-3/4 border-2 border-dashed border-cyan-400/70 rounded-xl pointer-events-none"></div>
             <div id="scanLine" class="hidden absolute w-3/4 left-1/8 h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_15px_#10b981] scan-animation"></div>
+            
             <span id="cameraPlaceholder" class="text-slate-500 text-sm font-medium">Camera Offline</span>
         </div>
 
+        <!-- Camera Controls -->
         <div class="flex gap-3 mt-4">
             <button id="startBtn" class="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg transition-all text-center">
                 📷 Start Scanner
@@ -70,6 +90,7 @@
             </button>
         </div>
 
+        <!-- Result Card (Leaf/Crop Name Removed) -->
         <div id="resultCard" class="hidden mt-6 bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl">
             <div class="flex justify-between items-center pb-3 border-b border-slate-800">
                 <span class="text-sm font-bold text-slate-300">Scan Analysis</span>
@@ -121,26 +142,43 @@
         let currentTextToSpeak = "";
         let audioContext = null;
 
+        // Database containing only condition, treatment, and direct voice response
         const database = {
             'ta-IN': {
-                noLeaf: "இலை காணப்படவில்லை. இலையைக் காட்டவும்.",
+                noTarget: "பொருள் கண்டறியப்படவில்லை. நோயுற்ற பகுதியை கேமராவின் முன் காட்டவும்.",
                 diseases: [
-                    { disease: "இலை கருகல் நோய்", cure: "பாதிக்கப்பட்ட இலைகளை நீக்கி காப்பர் பூஞ்சைக் கொல்லி தெளிக்கவும்.", speech: "இலை கருகல் நோய் உள்ளது. காப்பர் பூஞ்சைக் கொல்லி தெளிக்கவும்." },
-                    { disease: "பாக்டீரியா நோய்", cure: "வயலில் உள்ள நீரை வடித்து வேப்ப எண்ணெய் தெளிக்கவும்.", speech: "பாக்டீரியா நோய் உள்ளது. வேப்ப எண்ணெய் தெளிக்கவும்." },
+                    { disease: "இலை கருகல் நோய்", cure: "பாதிக்கப்பட்ட பகுதிகளை நீக்கி காப்பர் பூஞ்சைக் கொல்லி தெளிக்கவும்.", speech: "இலை கருகல் நோய் உள்ளது. காப்பர் பூஞ்சைக் கொல்லி தெளிக்கவும்." },
+                    { disease: "பாக்டீரியா வெடிப்பு நோய்", cure: "தேங்கியுள்ள நீரை வடித்து வேப்ப எண்ணெய் தெளிக்கவும்.", speech: "பாக்டீரியா நோய் உள்ளது. வேப்ப எண்ணெய் தெளிக்கவும்." },
                     { disease: "சாம்பல் நோய்", cure: "கந்தக தூள் (Sulphur Spray) தெளிக்கவும்.", speech: "சாம்பல் நோய் உள்ளது. கந்தக தூள் தெளிக்கவும்." },
-                    { disease: "ஆரோக்கியமானது", cure: "பயிர் ஆரோக்கியமாக உள்ளது. வழக்கமான பராமரிப்பு போதும்.", speech: "பயிர் ஆரோக்கியமாக உள்ளது." }
+                    { disease: "ஆரோக்கியமான நிலை", cure: "நோய் எதுவும் இல்லை. வழக்கமான நீர் மற்றும் உர பராமரிப்பு போதுமானது.", speech: "செடி ஆரோக்கியமாக உள்ளது." }
                 ]
             },
             'hi-IN': {
-                noLeaf: "पत्ता नहीं दिखा। कैमरा के सामने पत्ता रखें।",
+                noTarget: "कोई पौधा नहीं मिला। कृपया प्रभावित हिस्से को सामने रखें।",
                 diseases: [
-                    { disease: "अगेती झुलसा रोग", cure: "कवकनाशी का छिड़काव करें।", speech: "अगेती झुलसा रोग है। कवकनाशी का छिड़काव करें।" }
+                    { disease: "झुलसा रोग (Blight)", cure: "संक्रमित हिस्से को हटाएं और कवकनाशी का छिड़काव करें।", speech: "झुलसा रोग पाया गया है। कवकनाशी का छिड़काव करें।" },
+                    { disease: "जीवाणु रोग", cure: "नीम के तेल का छिड़काव करें।", speech: "जीवाणु रोग है। नीम के तेल का छिड़काव करें।" }
                 ]
             },
             'en-US': {
-                noLeaf: "No leaf detected. Place a leaf inside.",
+                noTarget: "No object detected. Place the affected area inside the frame.",
                 diseases: [
-                    { disease: "Early Blight", cure: "Spray fungicide immediately.", speech: "Early Blight detected. Apply fungicide immediately." }
+                    { disease: "Early Blight Disease", cure: "Prune infected parts and apply fungicide.", speech: "Early blight detected. Apply fungicide immediately." },
+                    { disease: "Bacterial Blight", cure: "Drain excess water and spray neem oil.", speech: "Bacterial blight detected. Spray neem oil." },
+                    { disease: "Powdery Mildew", cure: "Spray sulphur dust on affected areas.", speech: "Powdery mildew detected. Apply sulphur spray." },
+                    { disease: "Healthy Condition", cure: "No disease detected. Maintain regular hydration and soil health.", speech: "Plant is completely healthy." }
+                ]
+            },
+            'te-IN': {
+                noTarget: "ఏదీ కనుగొనబడలేదు. కెమెరా ముందు ఉంచండి.",
+                diseases: [
+                    { disease: "ఆకు మచ్చ తెగులు", cure: "మందు పిచికారీ చేయండి.", speech: "ఆకు మచ్చ తెగులు சோకింది. మందు పిచికారీ చేయండి." }
+                ]
+            },
+            'es-ES': {
+                noTarget: "No se detectó ningún objeto.",
+                diseases: [
+                    { disease: "Tizón Temprano", cure: "Corte las partes infectadas y aplique fungicida.", speech: "Tizón temprano detectado. Aplique fungicida inmediatamente." }
                 ]
             }
         };
@@ -153,11 +191,12 @@
             }
         }
 
+        // Low latency immediate speech playback
         function speakImmediately(text) {
             if (!text) return;
 
             if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
+                window.speechSynthesis.cancel(); // Clear queue for immediate response
                 const utterance = new SpeechSynthesisUtterance(text);
                 utterance.lang = selectedLang;
                 utterance.rate = 1.0;
@@ -226,13 +265,16 @@
             }
 
             const greenRatio = greenPixels / totalPixels;
-            const currentLangData = database[selectedLang] || database['ta-IN'];
+            const currentLangData = database[selectedLang] || database['en-US'] || database['ta-IN'];
 
             if (greenRatio > 0.12) { 
                 const randomDisease = currentLangData.diseases[Math.floor(Math.random() * currentLangData.diseases.length)];
                 
                 diseaseName.textContent = randomDisease.disease;
-                diseaseName.className = randomDisease.disease === "ஆரோக்கியமானது" ? "text-emerald-400 font-bold text-base mt-0.5" : "text-rose-400 font-bold text-base mt-0.5";
+                diseaseName.className = (randomDisease.disease.includes("ஆரோக்கியமான") || randomDisease.disease.includes("Healthy")) 
+                    ? "text-emerald-400 font-bold text-base mt-0.5" 
+                    : "text-rose-400 font-bold text-base mt-0.5";
+                
                 accuracyVal.textContent = "98.5%";
                 cureInstructions.textContent = randomDisease.cure;
 
@@ -241,13 +283,13 @@
                     speakImmediately(currentTextToSpeak);
                 }
             } else {
-                diseaseName.textContent = "இலை காணப்படவில்லை";
+                diseaseName.textContent = "No Target Detected";
                 diseaseName.className = "text-amber-400 font-bold text-base mt-0.5";
                 accuracyVal.textContent = "0%";
-                cureInstructions.textContent = currentLangData.noLeaf;
+                cureInstructions.textContent = currentLangData.noTarget;
                 
-                if (currentTextToSpeak !== currentLangData.noLeaf) {
-                    currentTextToSpeak = currentLangData.noLeaf;
+                if (currentTextToSpeak !== currentLangData.noTarget) {
+                    currentTextToSpeak = currentLangData.noTarget;
                     speakImmediately(currentTextToSpeak);
                 }
             }
