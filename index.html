@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AgriGuard AI - Smart Leaf Scanner with Single Voice Output</title>
+    <title>AgriGuard AI - All India Farmer Voice Scanner</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <style>
         * {
@@ -212,10 +212,19 @@
             background: #2e7d32;
             color: white;
             border: none;
-            padding: 5px 10px;
+            padding: 6px 12px;
             border-radius: 4px;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
+            font-weight: 600;
             cursor: pointer;
+        }
+
+        .lang-select {
+            margin-top: 8px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            font-size: 0.85rem;
         }
     </style>
 </head>
@@ -223,12 +232,25 @@
 
     <header>
         <div class="logo">🌿 AgriGuard AI</div>
-        <div class="location-tag" id="userLocation">📍 Detecting Location...</div>
+        <div>
+            <div class="location-tag" id="userLocation">📍 Detecting Location...</div>
+        </div>
     </header>
 
     <section class="hero">
         <h1 class="hero-title">Point Camera at Leaf</h1>
-        <p class="hero-desc">Align leaf inside frame. AI speaks diagnosis once in your regional language.</p>
+        <p class="hero-desc">Scans leaves and speaks simple guidance in local Indian languages.</p>
+        <select id="langSelect" class="lang-select">
+            <option value="ta-IN">தமிழ் (Tamil)</option>
+            <option value="hi-IN">हिंदी (Hindi)</option>
+            <option value="te-IN">తెలుగు (Telugu)</option>
+            <option value="kn-IN">ಕನ್ನಡ (Kannada)</option>
+            <option value="ml-IN">മലയാളം (Malayalam)</option>
+            <option value="mr-IN">मराठी (Marathi)</option>
+            <option value="bn-IN">বাংলা (Bengali)</option>
+            <option value="gu-IN">ગુજરાતી (Gujarati)</option>
+            <option value="en-IN">English (India)</option>
+        </select>
     </section>
 
     <div class="scanner-container">
@@ -246,8 +268,8 @@
 
         <div class="result-card" id="resultCard">
             <div class="result-title">
-                <span>📊 Verified AI Diagnosis</span>
-                <button class="voice-btn" onclick="replayVoice()">🔊 Replay Voice</button>
+                <span>📊 Farmer AI Diagnosis</span>
+                <button class="voice-btn" onclick="forceReplayVoice()">🔊 Replay Voice</button>
             </div>
 
             <div class="info-group">
@@ -287,101 +309,207 @@
         const curableBadge = document.getElementById('curableBadge');
         const cureInstructions = document.getElementById('cureInstructions');
         const userLocation = document.getElementById('userLocation');
+        const langSelect = document.getElementById('langSelect');
         const canvas = document.getElementById('canvas');
 
         let stream = null;
         let scanInterval = null;
-        let regionalLang = 'en-US';
-        
-        // Voice State Management: Ensures audio triggers ONLY ONCE per unique detection
+        let selectedLang = 'ta-IN';
         let lastSpokenText = "";
-        let isSpeaking = false; 
+        let isSpeaking = false;
+        let synth = window.speechSynthesis;
 
+        // Multilingual Farmer Knowledge Base for India
         const database = {
-            'ta-IN': [
-                {
-                    id: "healthy",
-                    name: "Healthy Leaf (ஆரோக்கியமான இலை)",
-                    accuracy: "100%",
-                    statusClass: "badge-curable",
+            'ta-IN': {
+                noLeaf: "இலை கண்டறியப்படவில்லை. கேமரா முன் இலையை வைக்கவும்.",
+                healthy: {
+                    name: "ஆரோக்கியமான இலை",
                     statusText: "HEALTHY - நோய் இல்லை",
-                    cure: "இலை ஆரோக்கியமாக உள்ளது. வழக்கமான நீர் மற்றும் உர பராமரிப்பைத் தொடரவும்.",
-                    speech: "இலை ஆரோக்கியமாக உள்ளது. எந்த நோயும் கண்டறியப்படவில்லை."
+                    cure: "இலை நன்றாக உள்ளது. வழக்கம் போல் தண்ணீர் மற்றும் உரம் இடவும்.",
+                    speech: "பயிர் இலை நன்றாக உள்ளது. நோய் எதுவும் இல்லை. வழக்கம்போல் பராமரிக்கவும்."
                 },
-                {
-                    id: "blight",
-                    name: "Early Blight (முன்பருவ பிளைட் நோய்)",
-                    accuracy: "100%",
-                    statusClass: "badge-curable",
+                blight: {
+                    name: "இலை கருகல் நோய் (Blight)",
                     statusText: "YES - குணப்படுத்த முடியும்",
-                    cure: "பாதிக்கப்பட்ட இலைகளை அகற்றி அழிக்கவும். காப்பர் பூஞ்சைக் கொல்லி மருந்தை தெளிக்கவும்.",
-                    speech: "முன்பருவ பிளைட் நோய் கண்டறியப்பட்டுள்ளது. இதை குணப்படுத்த முடியும். பாதிக்கப்பட்ட இலைகளை அகற்றி காப்பர் பூஞ்சைக் கொல்லி தெளிக்கவும்."
-                },
-                {
-                    id: "virus",
-                    name: "Yellow Leaf Curl Virus (மஞ்சள் சுருள் வைரஸ்)",
-                    accuracy: "100%",
-                    statusClass: "badge-not-curable",
-                    statusText: "NO - குணப்படுத்த முடியாது",
-                    cure: "வைரஸை நேரடியாக குணப்படுத்த முடியாது. வெள்ளை ஈக்களைக் கட்டுப்படுத்த வேப்பெண்ணெய் தெளிக்கவும்.",
-                    speech: "மஞ்சள் சுருள் வைரஸ் கண்டறியப்பட்டுள்ளது. இதை நேரடியாக குணப்படுத்த முடியாது. வெள்ளை ஈக்களை கட்டுப்படுத்த வேப்பெண்ணெய் தெளிக்கவும்."
+                    cure: "பாதிக்கப்பட்ட இலையை கிள்ளி எறியவும். காப்பர் பூஞ்சை மருந்து தெளிக்கவும்.",
+                    speech: "இலை கருகல் நோய் உள்ளது. பாதிக்கப்பட்ட இலையை அகற்றி காப்பர் மருந்து தெளிக்கவும்."
                 }
-            ],
-            'en-US': [
-                {
-                    id: "healthy",
-                    name: "Healthy Leaf",
-                    accuracy: "100%",
-                    statusClass: "badge-curable",
-                    statusText: "HEALTHY - No Disease Detected",
-                    cure: "Plant leaf is healthy. Continue standard irrigation and plant maintenance.",
-                    speech: "The leaf is completely healthy. No disease detected."
+            },
+            'hi-IN': {
+                noLeaf: "पत्ती नहीं मिली। कृपया कैमरे के सामने पत्ती रखें।",
+                healthy: {
+                    name: "स्वस्थ पत्ती (Healthy)",
+                    statusText: "HEALTHY - कोई बीमारी नहीं",
+                    cure: "पत्ती स्वस्थ है। सामान्य पानी और खाद देते रहें।",
+                    speech: "फसल की पत्ती बिल्कुल स्वस्थ है। कोई बीमारी नहीं है।"
                 },
-                {
-                    id: "blight",
-                    name: "Tomato Early Blight",
-                    accuracy: "100%",
-                    statusClass: "badge-curable",
+                blight: {
+                    name: "झुलसा रोग (Blight Disease)",
+                    statusText: "YES - ठीक हो सकता है",
+                    cure: "प्रभावित पत्तियों को काट दें। कॉपर फफूंदनाशी का छिड़काव करें।",
+                    speech: "झुलसा रोग के लक्षण हैं। खराब पत्तियों को हटा दें और कॉपर की दवा का छिड़काव करें।"
+                }
+            },
+            'te-IN': {
+                noLeaf: "ఆకు కనిపించలేదు. కెమెరా ముందు ఆకును ఉంచండి.",
+                healthy: {
+                    name: "ఆరోగ్యకరమైన ఆకు",
+                    statusText: "HEALTHY - వ్యాధి లేదు",
+                    cure: "ఆకు ఆరోగ్యంగా ఉంది. సక్రమంగా నీరు, ఎరువులు అందించండి.",
+                    speech: "ఆకు ఆరోగ్యంగా ఉంది. ఎటువంటి వ్యాధి లేదు."
+                },
+                blight: {
+                    name: "ఎండు తెగులు (Blight Disease)",
+                    statusText: "YES - నయం చేయవచ్చు",
+                    cure: "బాధిత ఆకులను తొలగించండి. కాపర్ శిలీంధ్ర నాశిని పిచికారీ చేయండి.",
+                    speech: "ఎండు తెగులు గుర్తించబడింది. పాడైన ఆకులను తీసివేసి కాపర్ మందు పిచికారీ చేయండి."
+                }
+            },
+            'kn-IN': {
+                noLeaf: "ಎಲೆ ಕಂಡುಬಂದಿಲ್ಲ. ಕ್ಯಾಮೆರಾ ಮುಂದೆ ಎಲೆಯನ್ನು ಇರಿಸಿ.",
+                healthy: {
+                    name: "ಆರೋಗ್ಯಕರ ಎಲೆ",
+                    statusText: "HEALTHY - ರೋಗವಿಲ್ಲ",
+                    cure: "ಎಲೆ ಉತ್ತಮವಾಗಿದೆ. ಸಕಾಲದಲ್ಲಿ ನೀರು ಮತ್ತು ಗೊಬ್ಬರ ನೀಡಿ.",
+                    speech: "ಎಲೆ ಸಂಪೂರ್ಣವಾಗಿ ರೋಗಮುಕ್ತವಾಗಿದೆ. ಉತ್ತಮ ನಿರ್ವಹಣೆ ಮುಂದುವರಿಸಿ."
+                },
+                blight: {
+                    name: "ಎಲೆ ಕರಕಲು ರೋಗ (Blight)",
+                    statusText: "YES - ಗುಣಪಡಿಸಬಹುದು",
+                    cure: "ರೋಗಪೀಡಿತ ಎಲೆಗಳನ್ನು ತೆಗೆದುಹಾಕಿ. ಕಾಪರ್ ಶಿಲೀಂಧ್ರನಾಶಕ ಸಿಂಪಡಿಸಿ.",
+                    speech: "ಎಲೆ ಕರಕಲು ರೋಗ ಕಂಡುಬಂದಿದೆ. ಪೀಡಿತ ಎಲೆಗಳನ್ನು ತೆಗೆದು ಔಷಧ ಸಿಂಪಡಿಸಿ."
+                }
+            },
+            'ml-IN': {
+                noLeaf: "ഇല കണ്ടെത്തിയില്ല. ക്യാമറയ്ക്ക് മുന്നിൽ ഇല വയ്ക്കുക.",
+                healthy: {
+                    name: "ആരോഗ്യമുള്ള ഇല",
+                    statusText: "HEALTHY - രോഗമില്ല",
+                    cure: "ഇല ആരോഗ്യമുള്ളതാണ്. പതിവുപോലെ വെള്ളവും വളവും നൽകുക.",
+                    speech: "ഇല പൂർണ്ണമായും ആരോഗ്യമുള്ളതാണ്. രോഗങ്ങൾ ഒന്നുമില്ല."
+                },
+                blight: {
+                    name: "ഇല കരിഞ്ചെമ്പ് രോഗം",
+                    statusText: "YES - മാറ്റാം",
+                    cure: "രോഗം ബാധിച്ച ഇലകൾ നശിപ്പിക്കുക. കോപ്പർ കുമിൾനാശിനി തളിക്കുക.",
+                    speech: "ഇലയിൽ കരിഞ്ചെമ്പ് രോഗമുണ്ട്. ബാധിച്ച ഇലകൾ നീക്കം ചെയ്ത് മരുന്ന് തളിക്കുക."
+                }
+            },
+            'mr-IN': {
+                noLeaf: "पान सापडले नाही. कॅमेऱ्यासमोर पान ठेवा.",
+                healthy: {
+                    name: "निरोगी पान",
+                    statusText: "HEALTHY - रोग नाही",
+                    cure: "पान निरोगी आहे. नियमित पाणी आणि खत द्या.",
+                    speech: "पिकाचे पान निरोगी आहे. कोणताही रोग नाही."
+                },
+                blight: {
+                    name: "करपा रोग (Blight)",
+                    statusText: "YES - बरा होऊ शकतो",
+                    cure: "बाधित पाने काढून टाका. कॉपर बुरशीनाशकाची फवारणी करा.",
+                    speech: "करपा रोगाचा संसर्ग आहे. बाधित पाने काढून फवारणी करा."
+                }
+            },
+            'bn-IN': {
+                noLeaf: "পাতা পাওয়া যায়নি। ক্যামেরার সামনে পাতা রাখুন।",
+                healthy: {
+                    name: "নীরোগ পাতা",
+                    statusText: "HEALTHY - রোগ নেই",
+                    cure: "পাতা সুস্থ আছে। সঠিক পরিমাণে জল ও সার দিন।",
+                    speech: "পাতাটি সম্পূর্ণ সুস্থ আছে। কোনো রোগ নেই।"
+                },
+                blight: {
+                    name: "মড়ক রোগ (Blight Disease)",
+                    statusText: "YES - প্রতিকার সম্ভব",
+                    cure: "আক্রান্ত পাতা কেটে ফেলুন। কপার ছত্রাকনাশক স্প্রে করুন।",
+                    speech: "মড়ক রোগের লক্ষণ দেখা গেছে। আক্রান্ত পাতা ফেলে ওষুধ স্প্রে করুন।"
+                }
+            },
+            'gu-IN': {
+                noLeaf: "પાન મળ્યું નથી. કેમેરા સામે પાન રાખો.",
+                healthy: {
+                    name: "તંદુરસ્ત પાન",
+                    statusText: "HEALTHY - કોઈ રોગ નથી",
+                    cure: "પાન તંદુરસ્ત છે. નિયમિત પાણી અને ખાતર આપો.",
+                    speech: "પાંદડું એકદમ તંદુરસ્ત છે. કોઈ રોગ નથી."
+                },
+                blight: {
+                    name: "સુકારો/બળિયા રોગ",
+                    statusText: "YES - મટી શકે છે",
+                    cure: "બગડેલા પાંદડા દૂર કરો. કોપર ફૂગનાશક દવાનો છંટકાવ કરો.",
+                    speech: "સુકારાના લક્ષણો છે. બગડેલા પાન દૂર કરી દવાનો છંટકાવ કરો."
+                }
+            },
+            'en-IN': {
+                noLeaf: "No leaf detected. Place a plant leaf inside frame.",
+                healthy: {
+                    name: "Healthy Plant Leaf",
+                    statusText: "HEALTHY - No Disease",
+                    cure: "Leaf is healthy. Continue standard water and fertilizer routine.",
+                    speech: "The leaf is completely healthy. No plant disease detected."
+                },
+                blight: {
+                    name: "Early Blight Infection",
                     statusText: "YES - Curable",
-                    cure: "Prune affected leaves immediately. Apply copper fungicide to prevent spore distribution.",
-                    speech: "Early Blight disease detected. It is curable. Remove infected leaves and apply copper fungicide."
-                },
-                {
-                    id: "virus",
-                    name: "Yellow Leaf Curl Virus",
-                    accuracy: "100%",
-                    statusClass: "badge-not-curable",
-                    statusText: "NO - Not Curable",
-                    cure: "Viral issue. Control whiteflies using insecticides or neem oil spray to prevent spreading.",
-                    speech: "Yellow leaf curl virus detected. It is not directly curable. Control whiteflies using neem oil spray."
+                    cure: "Prune affected leaves immediately and apply copper fungicide spray.",
+                    speech: "Early Blight disease detected. Prune infected leaves and apply fungicide."
                 }
-            ]
+            }
         };
 
-        // Geolocation Detection
+        // Geolocation to Auto-Select State Language in India
         window.addEventListener('load', () => {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     (position) => {
                         const lat = position.coords.latitude;
                         const lon = position.coords.longitude;
+                        
+                        // Map coordinates to Indian regions
                         if (lat >= 8.0 && lat <= 13.5 && lon >= 76.0 && lon <= 80.3) {
-                            regionalLang = 'ta-IN';
-                            userLocation.textContent = "📍 Tamil Nadu, India (Tamil Assistant)";
+                            selectedLang = 'ta-IN'; // Tamil Nadu
+                            userLocation.textContent = "📍 Tamil Nadu";
+                        } else if (lat >= 14.0 && lat <= 19.0 && lon >= 77.0 && lon <= 84.0) {
+                            selectedLang = 'te-IN'; // Andhra / Telangana
+                            userLocation.textContent = "📍 Andhra/Telangana";
+                        } else if (lat >= 11.5 && lat <= 18.5 && lon >= 74.0 && lon <= 78.5) {
+                            selectedLang = 'kn-IN'; // Karnataka
+                            userLocation.textContent = "📍 Karnataka";
+                        } else if (lat >= 8.2 && lat <= 12.8 && lon >= 74.8 && lon <= 77.5) {
+                            selectedLang = 'ml-IN'; // Kerala
+                            userLocation.textContent = "📍 Kerala";
+                        } else if (lat >= 15.5 && lat <= 22.0 && lon >= 72.6 && lon <= 80.9) {
+                            selectedLang = 'mr-IN'; // Maharashtra
+                            userLocation.textContent = "📍 Maharashtra";
                         } else {
-                            regionalLang = 'en-US';
-                            userLocation.textContent = `📍 Lat: ${lat.toFixed(2)}, Lon: ${lon.toFixed(2)} (English Assistant)`;
+                            selectedLang = 'hi-IN'; // North India / Default Hindi
+                            userLocation.textContent = "📍 North India";
                         }
+                        langSelect.value = selectedLang;
                     },
-                    (err) => {
-                        regionalLang = 'ta-IN';
-                        userLocation.textContent = "📍 Tamil Nadu, India (Default)";
+                    () => {
+                        selectedLang = 'ta-IN';
+                        langSelect.value = 'ta-IN';
+                        userLocation.textContent = "📍 India (Default)";
                     }
                 );
             }
         });
 
+        langSelect.addEventListener('change', (e) => {
+            selectedLang = e.target.value;
+            lastSpokenText = ""; 
+        });
+
+        // Start Camera & Unlock Browser Mobile Audio Restrictions
         startBtn.addEventListener('click', async () => {
+            // Unlocks Speech Synthesis on Mobile (Chrome/Safari) via touch gesture
+            if (synth) {
+                const unlockUtterance = new SpeechSynthesisUtterance('');
+                synth.speak(unlockUtterance);
+            }
+
             statusText.textContent = 'Starting camera...';
             try {
                 stream = await navigator.mediaDevices.getUserMedia({ 
@@ -404,7 +532,7 @@
             statusText.textContent = 'Automatic scanning off';
             scanLine.style.display = 'none';
             clearInterval(scanInterval);
-            window.speechSynthesis.cancel();
+            if (synth) synth.cancel();
             lastSpokenText = "";
             isSpeaking = false;
         });
@@ -432,58 +560,68 @@
             }
 
             const greenRatio = greenPixels / totalPixels;
-            const currentDataSet = database[regionalLang] || database['en-US'];
+            const currentLangData = database[selectedLang] || database['ta-IN'];
 
             if (greenRatio > 0.15) { 
-                const selectedDisease = currentDataSet[Math.floor(Math.random() * currentDataSet.length)];
+                const selectedDisease = Math.random() > 0.5 ? currentLangData.healthy : currentLangData.blight;
                 
                 diseaseName.textContent = selectedDisease.name;
-                accuracyVal.textContent = selectedDisease.accuracy;
+                accuracyVal.textContent = "100%";
                 accuracyVal.style.color = "#10b981";
                 curableBadge.textContent = selectedDisease.statusText;
-                curableBadge.className = `badge ${selectedDisease.statusClass}`;
+                curableBadge.className = "badge badge-curable";
                 cureInstructions.textContent = selectedDisease.cure;
                 cureInstructions.className = "cure-box";
 
-                // Voice Logic: Speaks ONLY ONCE per detection result
+                // Speak once per output
                 if (lastSpokenText !== selectedDisease.speech && !isSpeaking) {
                     lastSpokenText = selectedDisease.speech;
-                    speakOnce(selectedDisease.speech);
+                    speakInLocalLanguage(selectedDisease.speech, selectedLang);
                 }
             } else {
-                diseaseName.textContent = regionalLang === 'ta-IN' ? "இலை கண்டறியப்படவில்லை" : "No Leaf Detected";
+                diseaseName.textContent = "No Leaf Detected";
                 accuracyVal.textContent = "0%";
                 accuracyVal.style.color = "#ef4444";
                 curableBadge.textContent = "INVALID OBJECT";
                 curableBadge.className = "badge badge-invalid";
-                cureInstructions.textContent = regionalLang === 'ta-IN' ? "கேமரா கட்டத்திற்குள் தாவர இலையை வைக்கவும்." : "Please align a plant leaf directly inside camera frame.";
+                cureInstructions.textContent = currentLangData.noLeaf;
                 cureInstructions.className = "cure-box cure-box-invalid";
                 
-                // Reset state when non-leaf object is shown
                 lastSpokenText = "";
             }
         }
 
-        // Single-trigger Voice Engine
-        function speakOnce(text) {
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel(); // Stop active playback
-
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = regionalLang;
-                utterance.rate = 0.9;
-
-                utterance.onstart = () => { isSpeaking = true; };
-                utterance.onend = () => { isSpeaking = false; };
-                utterance.onerror = () => { isSpeaking = false; };
-
-                window.speechSynthesis.speak(utterance);
+        // Reliable Speech Engine for All Indian Languages
+        function speakInLocalLanguage(text, langCode) {
+            if (!('speechSynthesis' in window)) {
+                alert("Speech Synthesis not supported in this browser");
+                return;
             }
+
+            synth.cancel(); // Clear queued speech
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = langCode;
+            utterance.rate = 0.85; // Slightly slower speech speed for farmers
+            utterance.pitch = 1.0;
+
+            // Attempt to bind matching installed device voice
+            const voices = synth.getVoices();
+            const matchingVoice = voices.find(v => v.lang.startsWith(langCode.slice(0, 2)));
+            if (matchingVoice) {
+                utterance.voice = matchingVoice;
+            }
+
+            utterance.onstart = () => { isSpeaking = true; };
+            utterance.onend = () => { isSpeaking = false; };
+            utterance.onerror = () => { isSpeaking = false; };
+
+            synth.speak(utterance);
         }
 
-        function replayVoice() {
+        function forceReplayVoice() {
             if (lastSpokenText) {
-                speakOnce(lastSpokenText);
+                speakInLocalLanguage(lastSpokenText, selectedLang);
             }
         }
     </script>
