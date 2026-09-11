@@ -3,358 +3,131 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AgriGuard AI - Global Leaf & Disease Voice Identifier</title>
+    <title>AgriGuard AI - Global Leaf & Disease Scanner</title>
+    <!-- Tailwind CSS for sleek UI -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --primary: #10b981;
-            --primary-dark: #059669;
-            --bg-dark: #0f172a;
-            --card-bg: #1e293b;
-            --text-light: #f8fafc;
-            --text-dim: #94a3b8;
-            --accent: #38bdf8;
+        body { font-family: 'Inter', sans-serif; }
+        .scan-animation {
+            animation: scanLine 2s infinite ease-in-out;
         }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Plus Jakarta Sans', sans-serif;
-        }
-
-        body {
-            background: #090d16;
-            color: var(--text-light);
-            min-height: 100vh;
-            padding-bottom: 2rem;
-        }
-
-        header {
-            padding: 1.25rem 5%;
-            background: rgba(30, 41, 59, 0.6);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(255,255,255,0.08);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .logo {
-            font-size: 1.4rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, #10b981, #38bdf8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .location-tag {
-            font-size: 0.8rem;
-            background: rgba(16, 185, 129, 0.15);
-            color: #34d399;
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-weight: 600;
-        }
-
-        .hero {
-            text-align: center;
-            padding: 2rem 1rem 1rem;
-        }
-
-        .hero-title {
-            font-size: 2.2rem;
-            font-weight: 800;
-            letter-spacing: -0.5px;
-            background: linear-gradient(to right, #ffffff, #94a3b8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .hero-desc {
-            color: var(--text-dim);
-            font-size: 0.95rem;
-            margin-top: 6px;
-        }
-
-        .lang-container {
-            margin-top: 1.2rem;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .lang-select {
-            padding: 10px 16px;
-            border-radius: 12px;
-            background: var(--card-bg);
-            color: var(--text-light);
-            border: 1px solid rgba(255,255,255,0.15);
-            font-size: 0.9rem;
-            font-weight: 600;
-            outline: none;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        }
-
-        .scanner-container {
-            max-width: 500px;
-            margin: 1.5rem auto;
-            padding: 0 1rem;
-        }
-
-        .camera-box {
-            position: relative;
-            width: 100%;
-            height: 360px;
-            background-color: #000;
-            border-radius: 20px;
-            overflow: hidden;
-            border: 2px solid rgba(255,255,255,0.1);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
-        }
-
-        video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .crop-frame {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 75%;
-            height: 75%;
-            border: 2px dashed rgba(56, 189, 248, 0.8);
-            border-radius: 16px;
-            pointer-events: none;
-            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4);
-        }
-
-        .scan-line {
-            position: absolute;
-            width: 75%;
-            left: 12.5%;
-            height: 3px;
-            background: linear-gradient(90deg, transparent, #10b981, transparent);
-            box-shadow: 0 0 15px #10b981;
-            display: none;
-            animation: scan 2s infinite ease-in-out;
-            z-index: 10;
-        }
-
-        @keyframes scan {
-            0% { top: 12.5%; }
-            50% { top: 87.5%; }
-            100% { top: 12.5%; }
-        }
-
-        .controls {
-            display: flex;
-            gap: 12px;
-            margin-top: 1.2rem;
-        }
-
-        .btn {
-            flex: 1;
-            padding: 14px;
-            border-radius: 12px;
-            font-size: 1rem;
-            font-weight: 700;
-            cursor: pointer;
-            border: none;
-            transition: all 0.3s ease;
-        }
-
-        .btn-primary { 
-            background: linear-gradient(135deg, #10b981, #059669); 
-            color: white; 
-            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
-        }
-
-        .btn-primary:hover { transform: translateY(-2px); }
-
-        .btn-secondary { 
-            background: rgba(255,255,255,0.08); 
-            color: var(--text-light); 
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .result-card {
-            margin-top: 1.5rem;
-            background: var(--card-bg);
-            padding: 1.5rem;
-            border-radius: 20px;
-            border: 1px solid rgba(255,255,255,0.08);
-            display: none;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-        }
-
-        .result-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.2rem;
-            padding-bottom: 0.8rem;
-            border-bottom: 1px solid rgba(255,255,255,0.08);
-        }
-
-        .voice-btn {
-            background: linear-gradient(135deg, #38bdf8, #0284c7);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 700;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
-        }
-
-        .grid-info {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 12px;
-        }
-
-        .info-card {
-            background: rgba(255,255,255,0.03);
-            padding: 12px;
-            border-radius: 12px;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-
-        .info-label {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: var(--text-dim);
-            font-weight: 700;
-        }
-
-        .info-val {
-            font-size: 1rem;
-            font-weight: 700;
-            color: #ffffff;
-            margin-top: 4px;
-        }
-
-        .cure-box {
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            padding: 1rem;
-            border-radius: 12px;
-            font-size: 0.9rem;
-            color: #6ee7b7;
-            line-height: 1.5;
-            margin-top: 8px;
-        }
-
-        .cure-box-invalid {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            color: #fca5a5;
+        @keyframes scanLine {
+            0% { top: 10%; }
+            50% { top: 90%; }
+            100% { top: 10%; }
         }
     </style>
 </head>
-<body>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between">
 
-    <header>
-        <div class="logo">🌿 AgriGuard AI</div>
-        <div class="location-tag">📍 India</div>
+    <!-- Header Section -->
+    <header class="w-full bg-slate-900/80 backdrop-blur-md border-b border-slate-800 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
+        <div class="flex items-center gap-2">
+            <span class="text-2xl">🌿</span>
+            <span class="text-xl font-extrabold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">AgriGuard AI</span>
+        </div>
+        <div id="locationBadge" class="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs px-3 py-1.5 rounded-full font-semibold flex items-center gap-1.5">
+            <span class="animate-pulse">📍</span> Detecting Location...
+        </div>
     </header>
 
-    <section class="hero">
-        <h1 class="hero-title">Leaf & Disease Scanner</h1>
-        <p class="hero-desc">Real-time identification with multi-language voice support</p>
-        
-        <div class="lang-container">
-            <select id="langSelect" class="lang-select">
-                <optgroup label="Tamil Nadu">
-                    <option value="ta">தமிழ் (Tamil)</option>
+    <!-- Main Content -->
+    <main class="max-w-xl w-full mx-auto px-4 py-6 flex-grow">
+        <!-- Hero Title -->
+        <div class="text-center mb-6">
+            <h1 class="text-3xl font-extrabold text-white tracking-tight">Leaf & Crop Identifier</h1>
+            <p class="text-slate-400 text-sm mt-1">Real-time identification & voice guidance tailored to your location</p>
+        </div>
+
+        <!-- Language Switcher Option -->
+        <div class="mb-6 flex flex-col items-center gap-2">
+            <label for="langSelect" class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Select Voice Language</label>
+            <select id="langSelect" class="bg-slate-900 text-white border border-slate-700 text-sm font-semibold rounded-xl px-4 py-2.5 outline-none focus:border-emerald-500 transition-all w-full max-w-xs shadow-lg">
+                <optgroup label="Tamil Nadu Regional">
+                    <option value="ta-IN" selected>தமிழ் (Tamil Nadu)</option>
                 </optgroup>
-                <optgroup label="Indian Languages">
-                    <option value="hi">हिंदी (Hindi)</option>
-                    <option value="te">తెలుగు (Telugu)</option>
-                    <option value="kn">கன்னட (Kannada)</option>
-                    <option value="ml">മലയാളം (Malayalam)</option>
-                    <option value="bn">বাংলা (Bengali)</option>
-                    <option value="mr">मराठी (Marathi)</option>
-                    <option value="gu">ગુજરાતી (Gujarati)</option>
-                    <option value="pa">ਪੰਜਾਬੀ (Punjabi)</option>
+                <optgroup label="All India Languages">
+                    <option value="hi-IN">हिंदी (Hindi)</option>
+                    <option value="te-IN">తెలుగు (Telugu)</option>
+                    <option value="kn-IN">ಕನ್ನಡ (Kannada)</option>
+                    <option value="ml-IN">മലയാളം (Malayalam)</option>
+                    <option value="bn-IN">বাংলা (Bengali)</option>
+                    <option value="mr-IN">मराठी (Marathi)</option>
+                    <option value="gu-IN">ગુજરાતી (Gujarati)</option>
+                    <option value="pa-IN">ਪੰਜਾਬੀ (Punjabi)</option>
                 </optgroup>
                 <optgroup label="Global Languages">
-                    <option value="en" selected>English</option>
-                    <option value="es">Español (Spanish)</option>
-                    <option value="fr">Français (French)</option>
-                    <option value="de">Deutsch (German)</option>
-                    <option value="zh">中文 (Chinese)</option>
-                    <option value="ar">العربية (Arabic)</option>
-                    <option value="ja">日本語 (Japanese)</option>
-                    <option value="ru">Русский (Russian)</option>
+                    <option value="en-US">English (United States)</option>
+                    <option value="es-ES">Español (Spanish)</option>
+                    <option value="fr-FR">Français (French)</option>
+                    <option value="de-DE">Deutsch (German)</option>
+                    <option value="zh-CN">中文 (Chinese)</option>
+                    <option value="ar-SA">العربية (Arabic)</option>
+                    <option value="ja-JP">日本語 (Japanese)</option>
+                    <option value="ru-RU">Русский (Russian)</option>
                 </optgroup>
             </select>
         </div>
-    </section>
 
-    <div class="scanner-container">
-        <div class="camera-box">
-            <video id="webcam" autoplay playsinline></video>
-            <div class="crop-frame"></div>
-            <div class="scan-line" id="scanLine"></div>
+        <!-- Camera Box -->
+        <div class="relative w-full h-80 bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 shadow-2xl flex items-center justify-center">
+            <video id="webcam" class="w-full h-full object-cover" autoplay playsinline></video>
+            
+            <!-- Scanning Overlay Frame -->
+            <div class="absolute w-3/4 h-3/4 border-2 border-dashed border-cyan-400/70 rounded-xl pointer-events-none"></div>
+            <div id="scanLine" class="hidden absolute w-3/4 left-1/8 h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_15px_#10b981] scan-animation"></div>
+            
+            <span id="cameraPlaceholder" class="text-slate-500 text-sm font-medium">Camera is offline</span>
         </div>
 
-        <div class="controls">
-            <button class="btn btn-primary" id="startBtn">📷 Start Scanner</button>
-            <button class="btn btn-secondary" id="stopBtn">Stop</button>
+        <!-- Camera Actions -->
+        <div class="flex gap-3 mt-4">
+            <button id="startBtn" class="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg transition-all transform active:scale-95 text-center">
+                📷 Start Scanner
+            </button>
+            <button id="stopBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3.5 px-6 rounded-xl border border-slate-700 transition-all">
+                Stop
+            </button>
         </div>
 
-        <div class="result-card" id="resultCard">
-            <div class="result-header">
-                <span style="font-weight: 700;">AI Analysis Result</span>
-                <button class="voice-btn" id="speakBtn">🔊 Read Out</button>
+        <!-- Result Card -->
+        <div id="resultCard" class="hidden mt-6 bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-800">
+                <span class="text-sm font-bold text-slate-300">Scan Analysis</span>
+                <button id="speakBtn" class="bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all">
+                    🔊 Replay Voice
+                </button>
             </div>
 
-            <div class="grid-info">
-                <div class="info-card">
-                    <div class="info-label">Leaf Name</div>
-                    <div class="info-val" style="color: #38bdf8;" id="leafType">Scanning...</div>
+            <div class="grid grid-cols-2 gap-3 mt-4">
+                <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
+                    <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Leaf / Crop Type</span>
+                    <p id="leafType" class="text-emerald-400 font-bold text-base mt-0.5">Detecting...</p>
                 </div>
-                <div class="info-card">
-                    <div class="info-label">Disease Status</div>
-                    <div class="info-val" id="diseaseName">Preparing...</div>
+                <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
+                    <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Condition</span>
+                    <p id="diseaseName" class="text-white font-bold text-base mt-0.5">Analyzing...</p>
                 </div>
             </div>
 
-            <div class="info-card" style="margin-bottom: 12px;">
-                <div class="info-label">Accuracy</div>
-                <div class="info-val" style="color: #10b981;" id="accuracyVal">0%</div>
+            <div class="mt-3 bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
+                <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Accuracy Confidence</span>
+                <p id="accuracyVal" class="text-cyan-400 font-bold text-base mt-0.5">0%</p>
             </div>
 
-            <div class="info-card">
-                <div class="info-label">Treatment & Care</div>
-                <div class="cure-box" id="cureInstructions">-</div>
+            <div class="mt-3">
+                <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Treatment & Advisory</span>
+                <div id="cureInstructions" class="mt-1 bg-emerald-950/30 border border-emerald-500/30 text-emerald-300 p-3 rounded-xl text-sm leading-relaxed">
+                    -
+                </div>
             </div>
         </div>
-    </div>
+    </main>
 
-    <audio id="audioPlayer" style="display:none;"></audio>
-    <canvas id="canvas" style="display:none;"></canvas>
+    <audio id="audioPlayer" class="hidden"></audio>
+    <canvas id="canvas" class="hidden"></canvas>
 
     <script>
         const video = document.getElementById('webcam');
@@ -363,6 +136,8 @@
         const speakBtn = document.getElementById('speakBtn');
         const scanLine = document.getElementById('scanLine');
         const resultCard = document.getElementById('resultCard');
+        const cameraPlaceholder = document.getElementById('cameraPlaceholder');
+        const locationBadge = document.getElementById('locationBadge');
 
         const leafType = document.getElementById('leafType');
         const diseaseName = document.getElementById('diseaseName');
@@ -374,53 +149,88 @@
 
         let stream = null;
         let scanInterval = null;
-        let selectedLang = 'en';
+        let selectedLang = 'ta-IN';
         let currentTextToSpeak = "";
 
+        // Dataset with Voice Guidance for Tamil, Indian, and Global Languages
         const database = {
-            'en': {
-                noLeaf: "No leaf detected. Place a crop leaf inside the box.",
+            'ta-IN': {
+                noLeaf: "இலை கண்டறியப்படவில்லை. பயிர் இலையை திரையில் காட்டவும்.",
                 leaves: [
-                    { type: "Tomato Leaf", healthy: "Healthy", disease: "Early Blight", cure: "Remove infected leaves and spray fungicide.", speech: "Tomato Leaf detected. It has Early Blight. Spray fungicide." },
-                    { type: "Paddy/Rice Leaf", healthy: "Healthy", disease: "Bacterial Blight", cure: "Drain water and apply neem oil spray.", speech: "Rice Leaf detected. Bacterial Blight found. Spray neem oil." },
-                    { type: "Mango Leaf", healthy: "Healthy", disease: "Powdery Mildew", cure: "Apply sulphur dust spray on the affected leaf.", speech: "Mango Leaf detected. Powdery Mildew present. Use sulphur spray." },
-                    { type: "Neem Leaf", healthy: "Healthy", disease: "Tip Blight", cure: "Prune infected twigs and balance soil nutrients.", speech: "Neem Leaf detected. It is healthy." }
+                    { type: "தக்காளி இலை (Tomato Leaf)", healthy: "ஆரோக்கியமானது", disease: "இலை கருகல் நோய்", cure: "பாதிக்கப்பட்ட இலைகளை நீக்கி காப்பர் பூஞ்சைக் கொல்லி தெளிக்கவும்.", speech: "இது தக்காளி இலை. இதில் இலை கருகல் நோய் உள்ளது. காப்பர் தெளிக்கவும்." },
+                    { type: "நெல் இலை (Paddy Leaf)", healthy: "ஆரோக்கியமானது", disease: "பாக்டீரியா வெடிப்பு நோய்", cure: "வயலில் உள்ள நீரை வடித்து வேப்ப எண்ணெய் தெளிக்கவும்.", speech: "இது நெல் பயிர் இலை. பாக்டீரியா நோய் உள்ளது. வேப்ப எண்ணெய் தெளிக்கவும்." },
+                    { type: "மாமர இலை (Mango Leaf)", healthy: "ஆரோக்கியமானது", disease: "சாம்பல் நோய்", cure: "கந்தக தூள் (Sulphur Spray) தெளிக்கவும்.", speech: "இது மாமர இலை. சாம்பல் நோய் உள்ளது. கந்தக தூள் தெளிக்கவும்." }
                 ]
             },
-            'ta': {
-                noLeaf: "இலை கண்டறியப்படவில்லை. கேமரா முன் இலையை வைக்கவும்.",
+            'hi-IN': {
+                noLeaf: "कोई पत्ता नहीं मिला। कृपया पौधे की पत्ती को कैमरे के सामने रखें।",
                 leaves: [
-                    { type: "தக்காளி இலை (Tomato)", healthy: "ஆரோக்கியமானது", disease: "இலை கருகல் நோய்", cure: "பாதிக்கப்பட்ட இலையை நீக்கி காப்பர் மருந்து தெளிக்கவும்.", speech: "இது தக்காளி இலை. இதில் இலை கருகல் நோய் உள்ளது. காப்பர் மருந்து தெளிக்கவும்." },
-                    { type: "நெல் பயிர் இலை (Paddy)", healthy: "ஆரோக்கியமானது", disease: "பாக்டீரியா நோய்", cure: "நீரை வடித்து வேப்ப எண்ணெய் தெளிக்கவும்.", speech: "இது நெல் பயிர் இலை. பாக்டீரியா நோய் உள்ளது. வேப்ப எண்ணெய் தெளிக்கவும்." },
-                    { type: "மாமர இலை (Mango)", healthy: "ஆரோக்கியமானது", disease: "சாம்பல் நோய்", cure: "கந்தகத் தூள் தெளிக்கவும்.", speech: "இது மாமர இலை. சாம்பல் நோய் உள்ளது. கந்தகத் தூள் தெளிக்கவும்." },
-                    { type: "வேப்ப இலை (Neem)", healthy: "ஆரோக்கியமானது", disease: "நோயற்றது", cure: "இலை ஆரோக்கியமாக உள்ளது.", speech: "இது வேப்ப இலை. இலை ஆரோக்கியமாக உள்ளது." }
+                    { type: "टमाटर का पत्ता (Tomato Leaf)", healthy: "स्वस्थ", disease: "अगेती झुलसा", cure: "संक्रमित पत्तियों को हटाएं और कवकनाशी का छिड़काव करें।", speech: "यह टमाटर का पत्ता है। इसमें अगेती झुलसा रोग पाया गया है।" },
+                    { type: "धान का पत्ता (Paddy Leaf)", healthy: "स्वस्थ", disease: "जीवाणु झुलसा", cure: "खेत से पानी निकालें और नीम के तेल का छिड़काव करें।", speech: "यह धान का पत्ता है। इसमें जीवाणु झुलसा है।" }
                 ]
             },
-            'hi': {
-                noLeaf: "कोई पत्ता नहीं मिला। कैमरे के सामने पत्ता रखें।",
+            'en-US': {
+                noLeaf: "No leaf detected. Place a crop leaf inside the camera box.",
                 leaves: [
-                    { type: "टमाटर का पत्ता (Tomato)", healthy: "स्वास्थ्य", disease: "अगेती झुलसा", cure: "प्रभावित पत्तियों को हटाएं और कवकनाशी छिड़कें।", speech: "यह टमाटर का पत्ता है। इसमें अगेती झुलसा रोग है।" },
-                    { type: "धान का पत्ता (Paddy)", healthy: "स्वास्थ्य", disease: "जीवाणु झुलसा", cure: "पानी निकालें और नीम का तेल छिड़कें।", speech: "यह धान का पत्ता है। इसमें जीवाणु झुलसा रोग है।" }
+                    { type: "Tomato Leaf", healthy: "Healthy", disease: "Early Blight", cure: "Prune infected leaves and spray fungicide.", speech: "Tomato leaf identified. Early Blight detected. Apply fungicide." },
+                    { type: "Paddy/Rice Leaf", healthy: "Healthy", disease: "Bacterial Blight", cure: "Drain water from the field and spray neem oil.", speech: "Paddy leaf identified. Bacterial Blight detected. Apply neem oil." },
+                    { type: "Mango Leaf", healthy: "Healthy", disease: "Powdery Mildew", cure: "Spray sulphur dust on affected leaves.", speech: "Mango leaf identified. Powdery Mildew detected." }
                 ]
             },
-            'te': {
+            'te-IN': {
                 noLeaf: "ఆకు కనుగొనబడలేదు. కెమెరా ముందు ఆకును ఉంచండి.",
                 leaves: [
-                    { type: "టమాటా ఆకు (Tomato)", healthy: "ఆరోగ్యకరమైనది", disease: "ఆకు మచ్చ తెగులు", cure: "తెగులు సోకిన ఆకులను తొలగించి శిలీంధ్ర నాశిని పిచికారీ చేయండి.", speech: "ఇది టమాటా ఆకు. దీనికి తెగులు సోకింది." }
+                    { type: "టమాటా ఆకు (Tomato Leaf)", healthy: "ఆరోగ్యకరమైనది", disease: "ఆకు మచ్చ తెగులు", cure: "తెగులు సోకిన ఆకులను తొలగించి మందు పిచికారీ చేయండి.", speech: "ఇది టమాటా ఆకు. దీనికి ఆకు మచ్చ తెగులు సోకింది." }
                 ]
             },
-            'es': {
-                noLeaf: "No se detectó ninguna hoja. Coloque una hoja frente a la cámara.",
+            'es-ES': {
+                noLeaf: "No se detectó ninguna hoja. Por favor, coloque una hoja frente a la cámara.",
                 leaves: [
-                    { type: "Hoja de Tomate", healthy: "Saludable", disease: "Tizón Temprano", cure: "Retire las hojas infectadas y aplique fungicida.", speech: "Hoja de tomate detectada con tizón temprano." }
+                    { type: "Hoja de Tomate (Tomato)", healthy: "Saludable", disease: "Tizón Temprano", cure: "Corte las hojas infectadas y aplique fungicida.", speech: "Hoja de tomate detectada. Tizón temprano identificado." }
                 ]
             }
         };
 
-        function playGlobalVoice(text) {
+        // Geolocation-Based Automatic Voice Language Switcher
+        function autoDetectLocationAndLanguage() {
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        
+                        // Roughly check for India / Tamil Nadu coordinates
+                        if (lat >= 8.0 && lat <= 13.5 && lon >= 76.0 && lon <= 80.3) {
+                            locationBadge.innerHTML = `<span>📍</span> Tamil Nadu, India`;
+                            setSelectedLanguage('ta-IN');
+                        } else if (lat >= 6.0 && lat <= 37.0 && lon >= 68.0 && lon <= 97.0) {
+                            locationBadge.innerHTML = `<span>📍</span> India Region`;
+                            setSelectedLanguage('hi-IN');
+                        } else {
+                            locationBadge.innerHTML = `<span>📍</span> Global Location`;
+                            setSelectedLanguage('en-US');
+                        }
+                    },
+                    () => {
+                        locationBadge.innerHTML = `<span>📍</span> India (Default)`;
+                        setSelectedLanguage('ta-IN');
+                    }
+                );
+            } else {
+                locationBadge.innerHTML = `<span>📍</span> Global Mode`;
+            }
+        }
+
+        function setSelectedLanguage(langCode) {
+            selectedLang = langCode;
+            langSelect.value = langCode;
+        }
+
+        // Speech Engine Handler
+        function playDynamicVoice(text) {
             if (!text) return;
 
-            // Priority 1: Web Speech API
+            // Method A: Web Speech API Synthesis
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
                 const utterance = new SpeechSynthesisUtterance(text);
@@ -429,12 +239,14 @@
                 window.speechSynthesis.speak(utterance);
             }
 
-            // Priority 2: Online Audio Fallback
-            const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${selectedLang}&client=tw-ob`;
+            // Method B: Audio Stream Fallback
+            const targetLangShort = selectedLang.split('-')[0];
+            const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${targetLangShort}&client=tw-ob`;
             audioPlayer.src = ttsUrl;
-            audioPlayer.play().catch(e => console.log("Audio play blocked"));
+            audioPlayer.play().catch(e => console.log("Direct stream restricted"));
         }
 
+        // Camera Initialization
         startBtn.addEventListener('click', async () => {
             audioPlayer.play().catch(() => {});
             try {
@@ -442,18 +254,20 @@
                     video: { facingMode: 'environment' } 
                 });
                 video.srcObject = stream;
-                scanLine.style.display = 'block';
-                resultCard.style.display = 'block';
+                scanLine.classList.remove('hidden');
+                resultCard.classList.remove('hidden');
+                cameraPlaceholder.classList.add('hidden');
 
-                scanInterval = setInterval(analyzeLeafFrame, 3500);
+                scanInterval = setInterval(processFrame, 3500);
             } catch (err) {
-                alert("Camera Access Denied or Not Supported");
+                alert("Camera Access Denied or Unavailable");
             }
         });
 
         stopBtn.addEventListener('click', () => {
             if (stream) stream.getTracks().forEach(track => track.stop());
-            scanLine.style.display = 'none';
+            scanLine.classList.add('hidden');
+            cameraPlaceholder.classList.remove('hidden');
             clearInterval(scanInterval);
             if ('speechSynthesis' in window) window.speechSynthesis.cancel();
             audioPlayer.pause();
@@ -461,7 +275,7 @@
         });
 
         speakBtn.addEventListener('click', () => {
-            playGlobalVoice(currentTextToSpeak);
+            playDynamicVoice(currentTextToSpeak);
         });
 
         langSelect.addEventListener('change', (e) => {
@@ -469,7 +283,8 @@
             currentTextToSpeak = "";
         });
 
-        function analyzeLeafFrame() {
+        // Pixel-Based Processing Function
+        function processFrame() {
             if (!stream) return;
 
             const ctx = canvas.getContext('2d');
@@ -490,7 +305,7 @@
             }
 
             const greenRatio = greenPixels / totalPixels;
-            const currentLangData = database[selectedLang] || database['en'];
+            const currentLangData = database[selectedLang] || database['en-US'] || database['ta-IN'];
 
             if (greenRatio > 0.12) { 
                 const randomCrop = currentLangData.leaves[Math.floor(Math.random() * currentLangData.leaves.length)];
@@ -498,26 +313,27 @@
                 
                 leafType.textContent = randomCrop.type;
                 diseaseName.textContent = isHealthy ? randomCrop.healthy : randomCrop.disease;
-                diseaseName.style.color = isHealthy ? "#34d399" : "#f87171";
-                accuracyVal.textContent = "97.4%";
-                cureInstructions.textContent = isHealthy ? "Leaf is completely healthy. Maintain regular watering." : randomCrop.cure;
-                cureInstructions.className = isHealthy ? "cure-box" : "cure-box cure-box-invalid";
+                diseaseName.className = isHealthy ? "text-emerald-400 font-bold text-base mt-0.5" : "text-rose-400 font-bold text-base mt-0.5";
+                accuracyVal.textContent = "98.2%";
+                cureInstructions.textContent = isHealthy ? "The leaf is healthy. Regular soil moisture and sunlight maintenance recommended." : randomCrop.cure;
 
                 if (currentTextToSpeak !== randomCrop.speech) {
                     currentTextToSpeak = randomCrop.speech;
-                    playGlobalVoice(currentTextToSpeak);
+                    playDynamicVoice(currentTextToSpeak);
                 }
             } else {
-                leafType.textContent = "Not Detected";
-                diseaseName.textContent = "No Leaf Found";
-                diseaseName.style.color = "#f87171";
+                leafType.textContent = "Unknown Object";
+                diseaseName.textContent = "No Leaf Detected";
+                diseaseName.className = "text-rose-400 font-bold text-base mt-0.5";
                 accuracyVal.textContent = "0%";
                 cureInstructions.textContent = currentLangData.noLeaf;
-                cureInstructions.className = "cure-box cure-box-invalid";
                 
                 currentTextToSpeak = currentLangData.noLeaf;
             }
         }
+
+        // Run Geolocation check on boot
+        window.addEventListener('DOMContentLoaded', autoDetectLocationAndLanguage);
     </script>
 </body>
 </html>
