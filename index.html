@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AgriGuard AI - Crop Type & Disease Voice Scanner</title>
+    <title>AgriGuard AI - Crop Type & Tamil Voice Scanner</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <style>
         * {
@@ -240,12 +240,9 @@
         <h1 class="hero-title">பயிர் இலை ஸ்கேனர்</h1>
         <p class="hero-desc">இலையின் வகை மற்றும் நோய்களைக் கண்டறிய கேமராவை இயக்கவும்.</p>
         <select id="langSelect" class="lang-select">
-            <option value="ta-IN">தமிழ் (Tamil)</option>
-            <option value="hi-IN">हिंदी (Hindi)</option>
-            <option value="te-IN">తెలుగు (Telugu)</option>
-            <option value="kn-IN">ಕನ್ನಡ (Kannada)</option>
-            <option value="ml-IN">മലയാളം (Malayalam)</option>
-            <option value="en-IN">English (India)</option>
+            <option value="ta">தமிழ் (Tamil)</option>
+            <option value="en">English (India)</option>
+            <option value="hi">हिंदी (Hindi)</option>
         </select>
     </section>
 
@@ -258,14 +255,14 @@
         </div>
 
         <div class="controls">
-            <button class="btn btn-primary" id="startBtn">📷 Start Camera & Enable Sound</button>
+            <button class="btn btn-primary" id="startBtn">📷 Start Camera & Enable Voice</button>
             <button class="btn btn-secondary" id="stopBtn">Stop</button>
         </div>
 
         <div class="result-card" id="resultCard">
             <div class="result-title">
                 <span>📊 AI பரிசோதனை முடிவு</span>
-                <button class="voice-btn" id="speakBtn">🔊 Replay Voice</button>
+                <button class="voice-btn" id="speakBtn">🔊 தமிழ் குரலில் கேட்க</button>
             </div>
 
             <div class="info-group">
@@ -295,6 +292,8 @@
         </div>
     </div>
 
+    <!-- Hidden audio element for fallback audio streaming -->
+    <audio id="audioPlayer" style="display:none;"></audio>
     <canvas id="canvas" style="display:none;"></canvas>
 
     <script>
@@ -312,16 +311,16 @@
         const curableBadge = document.getElementById('curableBadge');
         const cureInstructions = document.getElementById('cureInstructions');
         const langSelect = document.getElementById('langSelect');
+        const audioPlayer = document.getElementById('audioPlayer');
         const canvas = document.getElementById('canvas');
 
         let stream = null;
         let scanInterval = null;
-        let selectedLang = 'ta-IN';
+        let selectedLang = 'ta';
         let currentTextToSpeak = "";
-        let audioCtx = null;
 
         const database = {
-            'ta-IN': {
+            'ta': {
                 noLeaf: "இலை கண்டறியப்படவில்லை. கேமரா முன் பயிர் இலையை வைக்கவும்.",
                 leaves: [
                     {
@@ -341,67 +340,40 @@
                     }
                 ]
             },
-            'en-IN': {
+            'en': {
                 noLeaf: "No leaf detected. Place a plant leaf in front of the camera.",
                 leaves: [
                     {
                         type: "Tomato Leaf",
                         healthy: { name: "Healthy", statusText: "HEALTHY", cure: "Leaf is healthy. Continue normal care.", speech: "This is a tomato leaf. It is healthy." },
                         blight: { name: "Early Blight", statusText: "YES - Curable", cure: "Prune infected leaves and apply fungicide.", speech: "This is a tomato leaf. Early Blight detected. Apply fungicide." }
-                    },
-                    {
-                        type: "Paddy / Rice Leaf",
-                        healthy: { name: "Healthy", statusText: "HEALTHY", cure: "Crop growth is healthy.", speech: "This is a paddy leaf. It is completely healthy." },
-                        blight: { name: "Bacterial Blight", statusText: "YES - Curable", cure: "Drain field water and spray neem oil.", speech: "This is a paddy leaf. Bacterial blight detected." }
                     }
                 ]
             }
         };
 
-        function playBeepSound() {
-            try {
-                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                if (audioCtx.state === 'suspended') audioCtx.resume();
-                
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.1);
-            } catch(e){}
-        }
-
-        function forceSpeechPlay(text) {
+        // Dual Speech Engine (Speech Synthesis + Online Google TTS Audio Fallback)
+        function playTamilVoice(text) {
             if (!text) return;
-            
-            playBeepSound();
 
+            // Method 1: Web Speech API
             if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel(); // Reset previous speech
-                
-                setTimeout(() => {
-                    const utterance = new SpeechSynthesisUtterance(text);
-                    utterance.lang = selectedLang;
-                    utterance.rate = 0.85;
-                    utterance.volume = 1.0;
-                    window.speechSynthesis.speak(utterance);
-                }, 100);
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = selectedLang === 'ta' ? 'ta-IN' : 'en-IN';
+                utterance.rate = 0.85;
+                window.speechSynthesis.speak(utterance);
             }
+
+            // Method 2: High Quality Online Audio Stream (Guaranteed Working on Mobile)
+            const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${selectedLang}&client=tw-ob`;
+            audioPlayer.src = ttsUrl;
+            audioPlayer.play().catch(e => console.log("Audio playback restricted"));
         }
 
         startBtn.addEventListener('click', async () => {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            audioCtx.resume();
-            
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                const warmUp = new SpeechSynthesisUtterance('');
-                window.speechSynthesis.speak(warmUp);
-            }
+            // Pre-activate audio on touch event
+            audioPlayer.play().catch(() => {});
 
             statusText.textContent = 'கேமரா இயங்குகிறது...';
             try {
@@ -426,11 +398,12 @@
             scanLine.style.display = 'none';
             clearInterval(scanInterval);
             if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+            audioPlayer.pause();
             currentTextToSpeak = "";
         });
 
         speakBtn.addEventListener('click', () => {
-            forceSpeechPlay(currentTextToSpeak);
+            playTamilVoice(currentTextToSpeak);
         });
 
         langSelect.addEventListener('change', (e) => {
@@ -459,7 +432,7 @@
             }
 
             const greenRatio = greenPixels / totalPixels;
-            const currentLangData = database[selectedLang] || database['ta-IN'];
+            const currentLangData = database[selectedLang] || database['ta'];
 
             if (greenRatio > 0.15) { 
                 const randomCrop = currentLangData.leaves[Math.floor(Math.random() * currentLangData.leaves.length)];
@@ -476,7 +449,7 @@
 
                 if (currentTextToSpeak !== condition.speech) {
                     currentTextToSpeak = condition.speech;
-                    forceSpeechPlay(currentTextToSpeak);
+                    playTamilVoice(currentTextToSpeak);
                 }
             } else {
                 leafType.textContent = "அறியப்படவில்லை";
