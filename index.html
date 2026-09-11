@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ta">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AgriGuard AI - Farmer Voice & Audio Scanner</title>
+    <title>AgriGuard AI - Loud Voice Scanner</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <style>
         * {
@@ -211,11 +211,17 @@
             background: #2e7d32;
             color: white;
             border: none;
-            padding: 8px 14px;
+            padding: 10px 16px;
             border-radius: 6px;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             font-weight: 700;
             cursor: pointer;
+            box-shadow: 0 2px 8px rgba(46,125,50,0.3);
+            transition: transform 0.1s ease;
+        }
+
+        .voice-btn:active {
+            transform: scale(0.95);
         }
 
         .lang-select {
@@ -236,8 +242,8 @@
     </header>
 
     <section class="hero">
-        <h1 class="hero-title">Point Camera at Leaf</h1>
-        <p class="hero-desc">Click "Start Camera" to enable sound & local language voice output.</p>
+        <h1 class="hero-title">இலையை கேமரா முன் காட்டவும்</h1>
+        <p class="hero-desc">"Start Camera" கொடுத்து குரல் வழிகாட்டலை இயக்கவும்.</p>
         <select id="langSelect" class="lang-select">
             <option value="ta-IN">தமிழ் (Tamil)</option>
             <option value="hi-IN">हिंदी (Hindi)</option>
@@ -256,42 +262,44 @@
             <video id="webcam" autoplay playsinline></video>
             <div class="crop-frame"></div>
             <div class="scan-line" id="scanLine"></div>
-            <div class="camera-status" id="statusText">Automatic scanning is off</div>
+            <div class="camera-status" id="statusText">கேமரா முடங்கியுள்ளது</div>
         </div>
 
         <div class="controls">
-            <button class="btn btn-primary" id="startBtn">📷 Start Camera & Enable Sound</button>
+            <button class="btn btn-primary" id="startBtn">📷 Start Camera & Enable Voice</button>
             <button class="btn btn-secondary" id="stopBtn">Stop</button>
         </div>
 
         <div class="result-card" id="resultCard">
             <div class="result-title">
-                <span>📊 Farmer AI Diagnosis</span>
-                <button class="voice-btn" id="speakBtn">🔊 Play Voice Sound</button>
+                <span>📊 AI பரிசோதனை முடிவு</span>
+                <button class="voice-btn" id="speakBtn">📢 Replay Voice</button>
             </div>
 
             <div class="info-group">
-                <div class="info-label">Detected Status</div>
-                <div class="info-val" id="diseaseName">Initializing...</div>
+                <div class="info-label">கண்டறியப்பட்ட நிலை</div>
+                <div class="info-val" id="diseaseName">தயாராகிறது...</div>
             </div>
 
             <div class="info-group">
-                <div class="info-label">Prediction Accuracy</div>
+                <div class="info-label">துல்லியம் (Accuracy)</div>
                 <div class="info-val" style="color: #10b981;" id="accuracyVal">0%</div>
             </div>
 
             <div class="info-group">
-                <div class="info-label">Curability Status</div>
+                <div class="info-label">குணப்படுத்தும் நிலை</div>
                 <div id="curableBadge" class="badge badge-invalid">-</div>
             </div>
 
             <div class="info-group">
-                <div class="info-label">Recommended Treatment / Guidance</div>
+                <div class="info-label">பரிந்துரைக்கப்படும் சிகிச்சை</div>
                 <div class="cure-box" id="cureInstructions">-</div>
             </div>
         </div>
     </div>
 
+    <!-- Fallback Audio Element -->
+    <audio id="ttsAudio" style="display:none;"></audio>
     <canvas id="canvas" style="display:none;"></canvas>
 
     <script>
@@ -307,20 +315,18 @@
         const accuracyVal = document.getElementById('accuracyVal');
         const curableBadge = document.getElementById('curableBadge');
         const cureInstructions = document.getElementById('cureInstructions');
-        const userLocation = document.getElementById('userLocation');
         const langSelect = document.getElementById('langSelect');
+        const ttsAudio = document.getElementById('ttsAudio');
         const canvas = document.getElementById('canvas');
 
         let stream = null;
         let scanInterval = null;
         let selectedLang = 'ta-IN';
-        let lastSpokenText = "";
-        let audioCtx = null;
+        let currentTextToSpeak = "";
 
-        // Multilingual Knowledge Base
         const database = {
             'ta-IN': {
-                noLeaf: "இலை கண்டறியப்படவில்லை. கேமரா முன் தாவர இலையை வைக்கவும்.",
+                noLeaf: "இலை கண்டறியப்படவில்லை. கேமரா முன் பயிர் இலையை வைக்கவும்.",
                 healthy: {
                     name: "ஆரோக்கியமான இலை",
                     statusText: "HEALTHY - நோய் இல்லை",
@@ -328,7 +334,7 @@
                     speech: "பயிர் இலை நன்றாக உள்ளது. நோய் எதுவும் இல்லை. வழக்கம்போல் பராமரிக்கவும்."
                 },
                 blight: {
-                    name: "இலை கருகல் நோய் (Blight Disease)",
+                    name: "இலை கருகல் நோய் (Blight)",
                     statusText: "YES - குணப்படுத்த முடியும்",
                     cure: "பாதிக்கப்பட்ட இலையை கிள்ளி எறியவும். காப்பர் பூஞ்சை மருந்து தெளிக்கவும்.",
                     speech: "இலை கருகல் நோய் உள்ளது. பாதிக்கப்பட்ட இலையை அகற்றி காப்பர் மருந்து தெளிக்கவும்."
@@ -337,13 +343,13 @@
             'hi-IN': {
                 noLeaf: "पत्ती नहीं मिली। कृपया कैमरे के सामने पत्ती रखें।",
                 healthy: {
-                    name: "स्वस्थ पत्ती (Healthy Leaf)",
+                    name: "स्वस्थ पत्ती (Healthy)",
                     statusText: "HEALTHY - कोई बीमारी नहीं",
                     cure: "पत्ती स्वस्थ है। सामान्य पानी और खाद देते रहें।",
                     speech: "फसल की पत्ती बिल्कुल स्वस्थ है। कोई बीमारी नहीं है।"
                 },
                 blight: {
-                    name: "झुलसा रोग (Blight Disease)",
+                    name: "झुलसा रोग (Blight)",
                     statusText: "YES - ठीक हो सकता है",
                     cure: "प्रभावित पत्तियों को काट दें। कॉपर फफूंदनाशी का छिड़काव करें।",
                     speech: "झुलसा रोग के लक्षण हैं। खराब पत्तियों को हटा दें और कॉपर की दवा का छिड़काव करें।"
@@ -358,7 +364,7 @@
                     speech: "ఆకు ఆరోగ్యంగా ఉంది. ఎటువంటి వ్యాధి లేదు."
                 },
                 blight: {
-                    name: "ఎండు తెగులు (Blight Disease)",
+                    name: "ఎండు తెగులు (Blight)",
                     statusText: "YES - నయం చేయవచ్చు",
                     cure: "బాధిత ఆకులను తొలగించండి. కాపర్ శిలీంధ్ర నాశిని పిచికారీ చేయండి.",
                     speech: "ఎండు తెగులు గుర్తించబడింది. పాడైన ఆకులను తీసివేసి కాపర్ మందు పిచికారీ చేయండి."
@@ -418,7 +424,7 @@
                     speech: "পাতাটি সম্পূর্ণ সুস্থ আছে। কোনো রোগ নেই।"
                 },
                 blight: {
-                    name: "মড়ক রোগ (Blight Disease)",
+                    name: "মড়ক রোগ (Blight)",
                     statusText: "YES - প্রতিকার সম্ভব",
                     cure: "আক্রান্ত পাতা কেটে ফেলুন। কপার ছত্রাকনাশক স্প্রে করুন।",
                     speech: "মড়ক রোগের লক্ষণ দেখা গেছে। আক্রান্ত পাতা ফেলে ওষুধ স্প্রে করুন।"
@@ -456,97 +462,71 @@
             }
         };
 
-        // 1. Play Beep Sound (Instant Audio Feedback)
-        function playScanBeep() {
-            try {
-                if (!audioCtx) {
-                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                }
-                if (audioCtx.state === 'suspended') {
-                    audioCtx.resume();
-                }
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(880, audioCtx.currentTime); // High pitch beep
-                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.15);
-            } catch (e) {
-                console.log("Audio play blocked");
-            }
-        }
+        // User Click Triggered Loud Voice Function
+        function speakCurrentResult() {
+            if (!currentTextToSpeak) return;
 
-        // 2. Play Voice Speech
-        function speakText(text, lang) {
-            if (!('speechSynthesis' in window)) return;
-
-            window.speechSynthesis.cancel(); // Clear any previous speech
-
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = lang;
-            utterance.rate = 0.85; // Natural speed for farmers
-            utterance.volume = 1.0; // Max volume
-
-            window.speechSynthesis.speak(utterance);
-        }
-
-        // 3. User Action Trigger to Unlock Audio Context
-        startBtn.addEventListener('click', async () => {
-            // Unlock Mobile Web Audio Context on Button Tap
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            audioCtx.resume();
-
-            // Pre-warm Speech Synthesis on User Gesture
+            // 1. Try Native Browser Speech
             if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                const dummy = new SpeechSynthesisUtterance('');
-                window.speechSynthesis.speak(dummy);
+                window.speechSynthesis.cancel(); // Stop active speech
+                const utterance = new SpeechSynthesisUtterance(currentTextToSpeak);
+                utterance.lang = selectedLang;
+                utterance.rate = 0.85; 
+                utterance.volume = 1.0;
+
+                window.speechSynthesis.speak(utterance);
             }
 
-            playScanBeep();
+            // 2. Play Audio Stream (Ensures audio works on Mobile Touch Click)
+            const cleanLang = selectedLang.split('-')[0];
+            const audioUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(currentTextToSpeak)}&tl=${cleanLang}&client=tw-ob`;
+            ttsAudio.src = audioUrl;
+            ttsAudio.play().catch(e => console.log("Stream play triggered"));
+        }
 
-            statusText.textContent = 'Starting camera...';
+        // Direct Replay Button Event Listener
+        speakBtn.addEventListener('click', () => {
+            speakCurrentResult();
+        });
+
+        startBtn.addEventListener('click', async () => {
+            selectedLang = langSelect.value;
+            
+            // Warmup audio context on button click
+            ttsAudio.play().catch(() => {});
+
+            statusText.textContent = 'கேமரா இயங்குகிறது...';
             try {
                 stream = await navigator.mediaDevices.getUserMedia({ 
                     video: { facingMode: 'environment' } 
                 });
                 video.srcObject = stream;
-                statusText.textContent = 'Automatic scanning active';
+                statusText.textContent = 'தானியங்கி ஸ்கேனிங் செயல்படுகிறது';
                 scanLine.style.display = 'block';
                 resultCard.style.display = 'block';
 
                 scanInterval = setInterval(validateAndPredict, 3500);
             } catch (err) {
-                alert("Camera Access Denied or Unavailable");
+                alert("Camera Access Denied");
                 statusText.textContent = 'Camera Error';
             }
         });
 
         stopBtn.addEventListener('click', () => {
             if (stream) stream.getTracks().forEach(track => track.stop());
-            statusText.textContent = 'Automatic scanning off';
+            statusText.textContent = 'கேமரா முடங்கியுள்ளது';
             scanLine.style.display = 'none';
             clearInterval(scanInterval);
             if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-            lastSpokenText = "";
-        });
-
-        speakBtn.addEventListener('click', () => {
-            if (lastSpokenText) {
-                playScanBeep();
-                speakText(lastSpokenText, selectedLang);
-            }
+            ttsAudio.pause();
+            currentTextToSpeak = "";
         });
 
         langSelect.addEventListener('change', (e) => {
             selectedLang = e.target.value;
-            lastSpokenText = "";
+            currentTextToSpeak = "";
         });
 
-        // 4. Strict Leaf Scanner & Voice Output Trigger
         function validateAndPredict() {
             if (!stream) return;
 
@@ -583,13 +563,12 @@
                 cureInstructions.textContent = selectedDisease.cure;
                 cureInstructions.className = "cure-box";
 
-                if (lastSpokenText !== selectedDisease.speech) {
-                    lastSpokenText = selectedDisease.speech;
-                    playScanBeep(); // Beep Sound
-                    speakText(selectedDisease.speech, selectedLang); // Local Voice Output
+                if (currentTextToSpeak !== selectedDisease.speech) {
+                    currentTextToSpeak = selectedDisease.speech;
+                    speakCurrentResult(); // Plays voice on scan update
                 }
             } else {
-                diseaseName.textContent = "No Leaf Detected";
+                diseaseName.textContent = "இலை கண்டறியப்படவில்லை";
                 accuracyVal.textContent = "0%";
                 accuracyVal.style.color = "#ef4444";
                 curableBadge.textContent = "INVALID OBJECT";
@@ -597,7 +576,7 @@
                 cureInstructions.textContent = currentLangData.noLeaf;
                 cureInstructions.className = "cure-box cure-box-invalid";
                 
-                lastSpokenText = "";
+                currentTextToSpeak = currentLangData.noLeaf;
             }
         }
     </script>
