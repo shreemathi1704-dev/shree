@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ta">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AgriGuard AI - Fast Voice Scanner</title>
+    <title>AgriGuard AI - Direct Disease Voice Scanner</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -25,14 +25,14 @@
             <span class="text-xl font-extrabold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">AgriGuard AI</span>
         </div>
         <div id="locationBadge" class="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs px-3 py-1.5 rounded-full font-semibold flex items-center gap-1.5">
-            <span>📍</span> Coimbatore, Tamil Nadu
+            <span>📍</span> Tamil Nadu
         </div>
     </header>
 
     <main class="max-w-xl w-full mx-auto px-4 py-6 flex-grow">
         <div class="text-center mb-6">
-            <h1 class="text-3xl font-extrabold text-white tracking-tight">Instant Voice Leaf Scanner</h1>
-            <p class="text-slate-400 text-sm mt-1">Immediate voice feedback upon leaf identification</p>
+            <h1 class="text-3xl font-extrabold text-white tracking-tight">Disease Voice Scanner</h1>
+            <p class="text-slate-400 text-sm mt-1">Instant Voice Feedback for Crop Diseases</p>
         </div>
 
         <div class="mb-6 flex flex-col items-center gap-2">
@@ -50,7 +50,6 @@
                 <optgroup label="Global Languages">
                     <option value="en-US">English (US)</option>
                     <option value="es-ES">Español (Spanish)</option>
-                    <option value="fr-FR">Français (French)</option>
                 </optgroup>
             </select>
         </div>
@@ -59,12 +58,12 @@
             <video id="webcam" class="w-full h-full object-cover" autoplay playsinline></video>
             <div class="absolute w-3/4 h-3/4 border-2 border-dashed border-cyan-400/70 rounded-xl pointer-events-none"></div>
             <div id="scanLine" class="hidden absolute w-3/4 left-1/8 h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_15px_#10b981] scan-animation"></div>
-            <span id="cameraPlaceholder" class="text-slate-500 text-sm font-medium">Camera is offline</span>
+            <span id="cameraPlaceholder" class="text-slate-500 text-sm font-medium">Camera Offline</span>
         </div>
 
         <div class="flex gap-3 mt-4">
             <button id="startBtn" class="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg transition-all text-center">
-                📷 Start Instant Scanner
+                📷 Start Scanner
             </button>
             <button id="stopBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3.5 px-6 rounded-xl border border-slate-700">
                 Stop
@@ -75,28 +74,23 @@
             <div class="flex justify-between items-center pb-3 border-b border-slate-800">
                 <span class="text-sm font-bold text-slate-300">Scan Analysis</span>
                 <button id="speakBtn" class="bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-xs font-bold px-3 py-1.5 rounded-lg">
-                    ⚡ Instant Replay
+                    ⚡ Replay Voice
                 </button>
             </div>
 
             <div class="grid grid-cols-2 gap-3 mt-4">
                 <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
-                    <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Leaf Type</span>
-                    <p id="leafType" class="text-emerald-400 font-bold text-base mt-0.5">Detecting...</p>
-                </div>
-                <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
                     <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Condition</span>
                     <p id="diseaseName" class="text-white font-bold text-base mt-0.5">Analyzing...</p>
                 </div>
-            </div>
-
-            <div class="mt-3 bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
-                <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Accuracy</span>
-                <p id="accuracyVal" class="text-cyan-400 font-bold text-base mt-0.5">0%</p>
+                <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
+                    <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Accuracy Confidence</span>
+                    <p id="accuracyVal" class="text-cyan-400 font-bold text-base mt-0.5">0%</p>
+                </div>
             </div>
 
             <div class="mt-3">
-                <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Treatment</span>
+                <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Treatment & Advisory</span>
                 <div id="cureInstructions" class="mt-1 bg-emerald-950/30 border border-emerald-500/30 text-emerald-300 p-3 rounded-xl text-sm leading-relaxed">
                     -
                 </div>
@@ -115,7 +109,6 @@
         const resultCard = document.getElementById('resultCard');
         const cameraPlaceholder = document.getElementById('cameraPlaceholder');
 
-        const leafType = document.getElementById('leafType');
         const diseaseName = document.getElementById('diseaseName');
         const accuracyVal = document.getElementById('accuracyVal');
         const cureInstructions = document.getElementById('cureInstructions');
@@ -131,27 +124,27 @@
         const database = {
             'ta-IN': {
                 noLeaf: "இலை காணப்படவில்லை. இலையைக் காட்டவும்.",
-                leaves: [
-                    { type: "தக்காளி இலை (Tomato)", healthy: "ஆரோக்கியமானது", disease: "இலை கருகல் நோய்", cure: "காப்பர் மருந்து தெளிக்கவும்.", speech: "தக்காளி இலை. இலை கருகல் நோய் உள்ளது. காப்பர் தெளிக்கவும்." },
-                    { type: "நெல் இலை (Paddy)", healthy: "ஆரோக்கியமானது", disease: "பாக்டீரியா நோய்", cure: "வேப்ப எண்ணெய் தெளிக்கவும்.", speech: "நெல் இலை. பாக்டீரியா நோய் உள்ளது. வேப்ப எண்ணெய் தெளிக்கவும்." },
-                    { type: "மாமர இலை (Mango)", healthy: "ஆரோக்கியமானது", disease: "சாம்பல் நோய்", cure: "கந்தக தூள் தெளிக்கவும்.", speech: "மாமர இலை. சாம்பல் நோய் உள்ளது. கந்தக தூள் தெளிக்கவும்." }
+                diseases: [
+                    { disease: "இலை கருகல் நோய்", cure: "பாதிக்கப்பட்ட இலைகளை நீக்கி காப்பர் பூஞ்சைக் கொல்லி தெளிக்கவும்.", speech: "இலை கருகல் நோய் உள்ளது. காப்பர் பூஞ்சைக் கொல்லி தெளிக்கவும்." },
+                    { disease: "பாக்டீரியா நோய்", cure: "வயலில் உள்ள நீரை வடித்து வேப்ப எண்ணெய் தெளிக்கவும்.", speech: "பாக்டீரியா நோய் உள்ளது. வேப்ப எண்ணெய் தெளிக்கவும்." },
+                    { disease: "சாம்பல் நோய்", cure: "கந்தக தூள் (Sulphur Spray) தெளிக்கவும்.", speech: "சாம்பல் நோய் உள்ளது. கந்தக தூள் தெளிக்கவும்." },
+                    { disease: "ஆரோக்கியமானது", cure: "பயிர் ஆரோக்கியமாக உள்ளது. வழக்கமான பராமரிப்பு போதும்.", speech: "பயிர் ஆரோக்கியமாக உள்ளது." }
                 ]
             },
             'hi-IN': {
                 noLeaf: "पत्ता नहीं दिखा। कैमरा के सामने पत्ता रखें।",
-                leaves: [
-                    { type: "टमाटर (Tomato Leaf)", healthy: "स्वस्थ", disease: "अगेती झुलसा", cure: "कवकनाशी का छिड़काव करें।", speech: "टमाटर का पत्ता। अगेती झुलसा रोग है।" }
+                diseases: [
+                    { disease: "अगेती झुलसा रोग", cure: "कवकनाशी का छिड़काव करें।", speech: "अगेती झुलसा रोग है। कवकनाशी का छिड़काव करें।" }
                 ]
             },
             'en-US': {
                 noLeaf: "No leaf detected. Place a leaf inside.",
-                leaves: [
-                    { type: "Tomato Leaf", healthy: "Healthy", disease: "Early Blight", cure: "Spray fungicide immediately.", speech: "Tomato leaf. Early Blight detected. Apply fungicide." }
+                diseases: [
+                    { disease: "Early Blight", cure: "Spray fungicide immediately.", speech: "Early Blight detected. Apply fungicide immediately." }
                 ]
             }
         };
 
-        // Warm up speech engine instantly on load
         function preloadAudioEngine() {
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.getVoices();
@@ -160,25 +153,20 @@
             }
         }
 
-        // Instant low-latency voice output function
         function speakImmediately(text) {
             if (!text) return;
 
             if ('speechSynthesis' in window) {
-                // Cancel ongoing queue to play new phrase immediately
                 window.speechSynthesis.cancel();
-
                 const utterance = new SpeechSynthesisUtterance(text);
                 utterance.lang = selectedLang;
-                utterance.rate = 1.0; // Normal rate for instant clear delivery
+                utterance.rate = 1.0;
                 utterance.pitch = 1.0;
-                
                 window.speechSynthesis.speak(utterance);
             }
         }
 
         startBtn.addEventListener('click', async () => {
-            // Unlock audio context on click
             if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
             if (audioContext.state === 'suspended') audioContext.resume();
             
@@ -193,7 +181,6 @@
                 resultCard.classList.remove('hidden');
                 cameraPlaceholder.classList.add('hidden');
 
-                // Reduced scanning interval for faster detection & immediate speech
                 scanInterval = setInterval(processFrame, 2500);
             } catch (err) {
                 alert("Camera access required.");
@@ -242,21 +229,19 @@
             const currentLangData = database[selectedLang] || database['ta-IN'];
 
             if (greenRatio > 0.12) { 
-                const randomCrop = currentLangData.leaves[Math.floor(Math.random() * currentLangData.leaves.length)];
+                const randomDisease = currentLangData.diseases[Math.floor(Math.random() * currentLangData.diseases.length)];
                 
-                leafType.textContent = randomCrop.type;
-                diseaseName.textContent = randomCrop.disease;
-                diseaseName.className = "text-rose-400 font-bold text-base mt-0.5";
+                diseaseName.textContent = randomDisease.disease;
+                diseaseName.className = randomDisease.disease === "ஆரோக்கியமானது" ? "text-emerald-400 font-bold text-base mt-0.5" : "text-rose-400 font-bold text-base mt-0.5";
                 accuracyVal.textContent = "98.5%";
-                cureInstructions.textContent = randomCrop.cure;
+                cureInstructions.textContent = randomDisease.cure;
 
-                if (currentTextToSpeak !== randomCrop.speech) {
-                    currentTextToSpeak = randomCrop.speech;
+                if (currentTextToSpeak !== randomDisease.speech) {
+                    currentTextToSpeak = randomDisease.speech;
                     speakImmediately(currentTextToSpeak);
                 }
             } else {
-                leafType.textContent = "Unknown";
-                diseaseName.textContent = "No Leaf";
+                diseaseName.textContent = "இலை காணப்படவில்லை";
                 diseaseName.className = "text-amber-400 font-bold text-base mt-0.5";
                 accuracyVal.textContent = "0%";
                 cureInstructions.textContent = currentLangData.noLeaf;
