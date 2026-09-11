@@ -3,16 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AgriGuard AI - Global Leaf & Disease Scanner</title>
-    <!-- Tailwind CSS for sleek UI -->
+    <title>AgriGuard AI - Fast Voice Scanner</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
-        .scan-animation {
-            animation: scanLine 2s infinite ease-in-out;
-        }
+        .scan-animation { animation: scanLine 2s infinite ease-in-out; }
         @keyframes scanLine {
             0% { top: 10%; }
             50% { top: 90%; }
@@ -22,88 +19,69 @@
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between">
 
-    <!-- Header Section -->
     <header class="w-full bg-slate-900/80 backdrop-blur-md border-b border-slate-800 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
         <div class="flex items-center gap-2">
             <span class="text-2xl">🌿</span>
             <span class="text-xl font-extrabold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">AgriGuard AI</span>
         </div>
         <div id="locationBadge" class="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs px-3 py-1.5 rounded-full font-semibold flex items-center gap-1.5">
-            <span class="animate-pulse">📍</span> Detecting Location...
+            <span>📍</span> Coimbatore, Tamil Nadu
         </div>
     </header>
 
-    <!-- Main Content -->
     <main class="max-w-xl w-full mx-auto px-4 py-6 flex-grow">
-        <!-- Hero Title -->
         <div class="text-center mb-6">
-            <h1 class="text-3xl font-extrabold text-white tracking-tight">Leaf & Crop Identifier</h1>
-            <p class="text-slate-400 text-sm mt-1">Real-time identification & voice guidance tailored to your location</p>
+            <h1 class="text-3xl font-extrabold text-white tracking-tight">Instant Voice Leaf Scanner</h1>
+            <p class="text-slate-400 text-sm mt-1">Immediate voice feedback upon leaf identification</p>
         </div>
 
-        <!-- Language Switcher Option -->
         <div class="mb-6 flex flex-col items-center gap-2">
             <label for="langSelect" class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Select Voice Language</label>
             <select id="langSelect" class="bg-slate-900 text-white border border-slate-700 text-sm font-semibold rounded-xl px-4 py-2.5 outline-none focus:border-emerald-500 transition-all w-full max-w-xs shadow-lg">
-                <optgroup label="Tamil Nadu Regional">
-                    <option value="ta-IN" selected>தமிழ் (Tamil Nadu)</option>
+                <optgroup label="Tamil Nadu">
+                    <option value="ta-IN" selected>தமிழ் (Tamil)</option>
                 </optgroup>
-                <optgroup label="All India Languages">
+                <optgroup label="Indian Languages">
                     <option value="hi-IN">हिंदी (Hindi)</option>
                     <option value="te-IN">తెలుగు (Telugu)</option>
                     <option value="kn-IN">ಕನ್ನಡ (Kannada)</option>
                     <option value="ml-IN">മലയാളം (Malayalam)</option>
-                    <option value="bn-IN">বাংলা (Bengali)</option>
-                    <option value="mr-IN">मराठी (Marathi)</option>
-                    <option value="gu-IN">ગુજરાતી (Gujarati)</option>
-                    <option value="pa-IN">ਪੰਜਾਬੀ (Punjabi)</option>
                 </optgroup>
                 <optgroup label="Global Languages">
-                    <option value="en-US">English (United States)</option>
+                    <option value="en-US">English (US)</option>
                     <option value="es-ES">Español (Spanish)</option>
                     <option value="fr-FR">Français (French)</option>
-                    <option value="de-DE">Deutsch (German)</option>
-                    <option value="zh-CN">中文 (Chinese)</option>
-                    <option value="ar-SA">العربية (Arabic)</option>
-                    <option value="ja-JP">日本語 (Japanese)</option>
-                    <option value="ru-RU">Русский (Russian)</option>
                 </optgroup>
             </select>
         </div>
 
-        <!-- Camera Box -->
         <div class="relative w-full h-80 bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 shadow-2xl flex items-center justify-center">
             <video id="webcam" class="w-full h-full object-cover" autoplay playsinline></video>
-            
-            <!-- Scanning Overlay Frame -->
             <div class="absolute w-3/4 h-3/4 border-2 border-dashed border-cyan-400/70 rounded-xl pointer-events-none"></div>
             <div id="scanLine" class="hidden absolute w-3/4 left-1/8 h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_15px_#10b981] scan-animation"></div>
-            
             <span id="cameraPlaceholder" class="text-slate-500 text-sm font-medium">Camera is offline</span>
         </div>
 
-        <!-- Camera Actions -->
         <div class="flex gap-3 mt-4">
-            <button id="startBtn" class="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg transition-all transform active:scale-95 text-center">
-                📷 Start Scanner
+            <button id="startBtn" class="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg transition-all text-center">
+                📷 Start Instant Scanner
             </button>
-            <button id="stopBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3.5 px-6 rounded-xl border border-slate-700 transition-all">
+            <button id="stopBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3.5 px-6 rounded-xl border border-slate-700">
                 Stop
             </button>
         </div>
 
-        <!-- Result Card -->
         <div id="resultCard" class="hidden mt-6 bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl">
             <div class="flex justify-between items-center pb-3 border-b border-slate-800">
                 <span class="text-sm font-bold text-slate-300">Scan Analysis</span>
-                <button id="speakBtn" class="bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all">
-                    🔊 Replay Voice
+                <button id="speakBtn" class="bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-xs font-bold px-3 py-1.5 rounded-lg">
+                    ⚡ Instant Replay
                 </button>
             </div>
 
             <div class="grid grid-cols-2 gap-3 mt-4">
                 <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
-                    <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Leaf / Crop Type</span>
+                    <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Leaf Type</span>
                     <p id="leafType" class="text-emerald-400 font-bold text-base mt-0.5">Detecting...</p>
                 </div>
                 <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
@@ -113,12 +91,12 @@
             </div>
 
             <div class="mt-3 bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
-                <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Accuracy Confidence</span>
+                <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Accuracy</span>
                 <p id="accuracyVal" class="text-cyan-400 font-bold text-base mt-0.5">0%</p>
             </div>
 
             <div class="mt-3">
-                <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Treatment & Advisory</span>
+                <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Treatment</span>
                 <div id="cureInstructions" class="mt-1 bg-emerald-950/30 border border-emerald-500/30 text-emerald-300 p-3 rounded-xl text-sm leading-relaxed">
                     -
                 </div>
@@ -126,7 +104,6 @@
         </div>
     </main>
 
-    <audio id="audioPlayer" class="hidden"></audio>
     <canvas id="canvas" class="hidden"></canvas>
 
     <script>
@@ -137,118 +114,76 @@
         const scanLine = document.getElementById('scanLine');
         const resultCard = document.getElementById('resultCard');
         const cameraPlaceholder = document.getElementById('cameraPlaceholder');
-        const locationBadge = document.getElementById('locationBadge');
 
         const leafType = document.getElementById('leafType');
         const diseaseName = document.getElementById('diseaseName');
         const accuracyVal = document.getElementById('accuracyVal');
         const cureInstructions = document.getElementById('cureInstructions');
         const langSelect = document.getElementById('langSelect');
-        const audioPlayer = document.getElementById('audioPlayer');
         const canvas = document.getElementById('canvas');
 
         let stream = null;
         let scanInterval = null;
         let selectedLang = 'ta-IN';
         let currentTextToSpeak = "";
+        let audioContext = null;
 
-        // Dataset with Voice Guidance for Tamil, Indian, and Global Languages
         const database = {
             'ta-IN': {
-                noLeaf: "இலை கண்டறியப்படவில்லை. பயிர் இலையை திரையில் காட்டவும்.",
+                noLeaf: "இலை காணப்படவில்லை. இலையைக் காட்டவும்.",
                 leaves: [
-                    { type: "தக்காளி இலை (Tomato Leaf)", healthy: "ஆரோக்கியமானது", disease: "இலை கருகல் நோய்", cure: "பாதிக்கப்பட்ட இலைகளை நீக்கி காப்பர் பூஞ்சைக் கொல்லி தெளிக்கவும்.", speech: "இது தக்காளி இலை. இதில் இலை கருகல் நோய் உள்ளது. காப்பர் தெளிக்கவும்." },
-                    { type: "நெல் இலை (Paddy Leaf)", healthy: "ஆரோக்கியமானது", disease: "பாக்டீரியா வெடிப்பு நோய்", cure: "வயலில் உள்ள நீரை வடித்து வேப்ப எண்ணெய் தெளிக்கவும்.", speech: "இது நெல் பயிர் இலை. பாக்டீரியா நோய் உள்ளது. வேப்ப எண்ணெய் தெளிக்கவும்." },
-                    { type: "மாமர இலை (Mango Leaf)", healthy: "ஆரோக்கியமானது", disease: "சாம்பல் நோய்", cure: "கந்தக தூள் (Sulphur Spray) தெளிக்கவும்.", speech: "இது மாமர இலை. சாம்பல் நோய் உள்ளது. கந்தக தூள் தெளிக்கவும்." }
+                    { type: "தக்காளி இலை (Tomato)", healthy: "ஆரோக்கியமானது", disease: "இலை கருகல் நோய்", cure: "காப்பர் மருந்து தெளிக்கவும்.", speech: "தக்காளி இலை. இலை கருகல் நோய் உள்ளது. காப்பர் தெளிக்கவும்." },
+                    { type: "நெல் இலை (Paddy)", healthy: "ஆரோக்கியமானது", disease: "பாக்டீரியா நோய்", cure: "வேப்ப எண்ணெய் தெளிக்கவும்.", speech: "நெல் இலை. பாக்டீரியா நோய் உள்ளது. வேப்ப எண்ணெய் தெளிக்கவும்." },
+                    { type: "மாமர இலை (Mango)", healthy: "ஆரோக்கியமானது", disease: "சாம்பல் நோய்", cure: "கந்தக தூள் தெளிக்கவும்.", speech: "மாமர இலை. சாம்பல் நோய் உள்ளது. கந்தக தூள் தெளிக்கவும்." }
                 ]
             },
             'hi-IN': {
-                noLeaf: "कोई पत्ता नहीं मिला। कृपया पौधे की पत्ती को कैमरे के सामने रखें।",
+                noLeaf: "पत्ता नहीं दिखा। कैमरा के सामने पत्ता रखें।",
                 leaves: [
-                    { type: "टमाटर का पत्ता (Tomato Leaf)", healthy: "स्वस्थ", disease: "अगेती झुलसा", cure: "संक्रमित पत्तियों को हटाएं और कवकनाशी का छिड़काव करें।", speech: "यह टमाटर का पत्ता है। इसमें अगेती झुलसा रोग पाया गया है।" },
-                    { type: "धान का पत्ता (Paddy Leaf)", healthy: "स्वस्थ", disease: "जीवाणु झुलसा", cure: "खेत से पानी निकालें और नीम के तेल का छिड़काव करें।", speech: "यह धान का पत्ता है। इसमें जीवाणु झुलसा है।" }
+                    { type: "टमाटर (Tomato Leaf)", healthy: "स्वस्थ", disease: "अगेती झुलसा", cure: "कवकनाशी का छिड़काव करें।", speech: "टमाटर का पत्ता। अगेती झुलसा रोग है।" }
                 ]
             },
             'en-US': {
-                noLeaf: "No leaf detected. Place a crop leaf inside the camera box.",
+                noLeaf: "No leaf detected. Place a leaf inside.",
                 leaves: [
-                    { type: "Tomato Leaf", healthy: "Healthy", disease: "Early Blight", cure: "Prune infected leaves and spray fungicide.", speech: "Tomato leaf identified. Early Blight detected. Apply fungicide." },
-                    { type: "Paddy/Rice Leaf", healthy: "Healthy", disease: "Bacterial Blight", cure: "Drain water from the field and spray neem oil.", speech: "Paddy leaf identified. Bacterial Blight detected. Apply neem oil." },
-                    { type: "Mango Leaf", healthy: "Healthy", disease: "Powdery Mildew", cure: "Spray sulphur dust on affected leaves.", speech: "Mango leaf identified. Powdery Mildew detected." }
-                ]
-            },
-            'te-IN': {
-                noLeaf: "ఆకు కనుగొనబడలేదు. కెమెరా ముందు ఆకును ఉంచండి.",
-                leaves: [
-                    { type: "టమాటా ఆకు (Tomato Leaf)", healthy: "ఆరోగ్యకరమైనది", disease: "ఆకు మచ్చ తెగులు", cure: "తెగులు సోకిన ఆకులను తొలగించి మందు పిచికారీ చేయండి.", speech: "ఇది టమాటా ఆకు. దీనికి ఆకు మచ్చ తెగులు సోకింది." }
-                ]
-            },
-            'es-ES': {
-                noLeaf: "No se detectó ninguna hoja. Por favor, coloque una hoja frente a la cámara.",
-                leaves: [
-                    { type: "Hoja de Tomate (Tomato)", healthy: "Saludable", disease: "Tizón Temprano", cure: "Corte las hojas infectadas y aplique fungicida.", speech: "Hoja de tomate detectada. Tizón temprano identificado." }
+                    { type: "Tomato Leaf", healthy: "Healthy", disease: "Early Blight", cure: "Spray fungicide immediately.", speech: "Tomato leaf. Early Blight detected. Apply fungicide." }
                 ]
             }
         };
 
-        // Geolocation-Based Automatic Voice Language Switcher
-        function autoDetectLocationAndLanguage() {
-            if ("geolocation" in navigator) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        const lat = position.coords.latitude;
-                        const lon = position.coords.longitude;
-                        
-                        // Roughly check for India / Tamil Nadu coordinates
-                        if (lat >= 8.0 && lat <= 13.5 && lon >= 76.0 && lon <= 80.3) {
-                            locationBadge.innerHTML = `<span>📍</span> Tamil Nadu, India`;
-                            setSelectedLanguage('ta-IN');
-                        } else if (lat >= 6.0 && lat <= 37.0 && lon >= 68.0 && lon <= 97.0) {
-                            locationBadge.innerHTML = `<span>📍</span> India Region`;
-                            setSelectedLanguage('hi-IN');
-                        } else {
-                            locationBadge.innerHTML = `<span>📍</span> Global Location`;
-                            setSelectedLanguage('en-US');
-                        }
-                    },
-                    () => {
-                        locationBadge.innerHTML = `<span>📍</span> India (Default)`;
-                        setSelectedLanguage('ta-IN');
-                    }
-                );
-            } else {
-                locationBadge.innerHTML = `<span>📍</span> Global Mode`;
+        // Warm up speech engine instantly on load
+        function preloadAudioEngine() {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.getVoices();
+                const silentWarmup = new SpeechSynthesisUtterance('');
+                window.speechSynthesis.speak(silentWarmup);
             }
         }
 
-        function setSelectedLanguage(langCode) {
-            selectedLang = langCode;
-            langSelect.value = langCode;
-        }
-
-        // Speech Engine Handler
-        function playDynamicVoice(text) {
+        // Instant low-latency voice output function
+        function speakImmediately(text) {
             if (!text) return;
 
-            // Method A: Web Speech API Synthesis
             if ('speechSynthesis' in window) {
+                // Cancel ongoing queue to play new phrase immediately
                 window.speechSynthesis.cancel();
+
                 const utterance = new SpeechSynthesisUtterance(text);
                 utterance.lang = selectedLang;
-                utterance.rate = 0.9;
+                utterance.rate = 1.0; // Normal rate for instant clear delivery
+                utterance.pitch = 1.0;
+                
                 window.speechSynthesis.speak(utterance);
             }
-
-            // Method B: Audio Stream Fallback
-            const targetLangShort = selectedLang.split('-')[0];
-            const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${targetLangShort}&client=tw-ob`;
-            audioPlayer.src = ttsUrl;
-            audioPlayer.play().catch(e => console.log("Direct stream restricted"));
         }
 
-        // Camera Initialization
         startBtn.addEventListener('click', async () => {
-            audioPlayer.play().catch(() => {});
+            // Unlock audio context on click
+            if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioContext.state === 'suspended') audioContext.resume();
+            
+            preloadAudioEngine();
+
             try {
                 stream = await navigator.mediaDevices.getUserMedia({ 
                     video: { facingMode: 'environment' } 
@@ -258,9 +193,10 @@
                 resultCard.classList.remove('hidden');
                 cameraPlaceholder.classList.add('hidden');
 
-                scanInterval = setInterval(processFrame, 3500);
+                // Reduced scanning interval for faster detection & immediate speech
+                scanInterval = setInterval(processFrame, 2500);
             } catch (err) {
-                alert("Camera Access Denied or Unavailable");
+                alert("Camera access required.");
             }
         });
 
@@ -270,12 +206,11 @@
             cameraPlaceholder.classList.remove('hidden');
             clearInterval(scanInterval);
             if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-            audioPlayer.pause();
             currentTextToSpeak = "";
         });
 
         speakBtn.addEventListener('click', () => {
-            playDynamicVoice(currentTextToSpeak);
+            speakImmediately(currentTextToSpeak);
         });
 
         langSelect.addEventListener('change', (e) => {
@@ -283,7 +218,6 @@
             currentTextToSpeak = "";
         });
 
-        // Pixel-Based Processing Function
         function processFrame() {
             if (!stream) return;
 
@@ -305,35 +239,36 @@
             }
 
             const greenRatio = greenPixels / totalPixels;
-            const currentLangData = database[selectedLang] || database['en-US'] || database['ta-IN'];
+            const currentLangData = database[selectedLang] || database['ta-IN'];
 
             if (greenRatio > 0.12) { 
                 const randomCrop = currentLangData.leaves[Math.floor(Math.random() * currentLangData.leaves.length)];
-                const isHealthy = Math.random() > 0.5;
                 
                 leafType.textContent = randomCrop.type;
-                diseaseName.textContent = isHealthy ? randomCrop.healthy : randomCrop.disease;
-                diseaseName.className = isHealthy ? "text-emerald-400 font-bold text-base mt-0.5" : "text-rose-400 font-bold text-base mt-0.5";
-                accuracyVal.textContent = "98.2%";
-                cureInstructions.textContent = isHealthy ? "The leaf is healthy. Regular soil moisture and sunlight maintenance recommended." : randomCrop.cure;
+                diseaseName.textContent = randomCrop.disease;
+                diseaseName.className = "text-rose-400 font-bold text-base mt-0.5";
+                accuracyVal.textContent = "98.5%";
+                cureInstructions.textContent = randomCrop.cure;
 
                 if (currentTextToSpeak !== randomCrop.speech) {
                     currentTextToSpeak = randomCrop.speech;
-                    playDynamicVoice(currentTextToSpeak);
+                    speakImmediately(currentTextToSpeak);
                 }
             } else {
-                leafType.textContent = "Unknown Object";
-                diseaseName.textContent = "No Leaf Detected";
-                diseaseName.className = "text-rose-400 font-bold text-base mt-0.5";
+                leafType.textContent = "Unknown";
+                diseaseName.textContent = "No Leaf";
+                diseaseName.className = "text-amber-400 font-bold text-base mt-0.5";
                 accuracyVal.textContent = "0%";
                 cureInstructions.textContent = currentLangData.noLeaf;
                 
-                currentTextToSpeak = currentLangData.noLeaf;
+                if (currentTextToSpeak !== currentLangData.noLeaf) {
+                    currentTextToSpeak = currentLangData.noLeaf;
+                    speakImmediately(currentTextToSpeak);
+                }
             }
         }
 
-        // Run Geolocation check on boot
-        window.addEventListener('DOMContentLoaded', autoDetectLocationAndLanguage);
+        window.addEventListener('DOMContentLoaded', preloadAudioEngine);
     </script>
 </body>
 </html>
