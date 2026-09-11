@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AgriGuard AI - All India Farmer Voice Scanner</title>
+    <title>AgriGuard AI - Farmer Voice & Audio Scanner</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <style>
         * {
@@ -127,10 +127,10 @@
         }
 
         .btn {
-            padding: 10px 22px;
+            padding: 12px 24px;
             border-radius: 6px;
-            font-size: 0.9rem;
-            font-weight: 600;
+            font-size: 0.95rem;
+            font-weight: 700;
             cursor: pointer;
             border: none;
         }
@@ -188,7 +188,6 @@
         }
 
         .badge-curable { background-color: #dcfce7; color: #15803d; }
-        .badge-not-curable { background-color: #fee2e2; color: #b91c1c; }
         .badge-invalid { background-color: #fee2e2; color: #991b1b; }
 
         .cure-box {
@@ -212,19 +211,20 @@
             background: #2e7d32;
             color: white;
             border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
+            padding: 8px 14px;
+            border-radius: 6px;
             font-size: 0.85rem;
-            font-weight: 600;
+            font-weight: 700;
             cursor: pointer;
         }
 
         .lang-select {
             margin-top: 8px;
-            padding: 4px 8px;
-            border-radius: 4px;
+            padding: 6px 12px;
+            border-radius: 6px;
             border: 1px solid #ccc;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
+            font-weight: 600;
         }
     </style>
 </head>
@@ -232,14 +232,12 @@
 
     <header>
         <div class="logo">🌿 AgriGuard AI</div>
-        <div>
-            <div class="location-tag" id="userLocation">📍 Detecting Location...</div>
-        </div>
+        <div class="location-tag" id="userLocation">📍 Tamil Nadu</div>
     </header>
 
     <section class="hero">
         <h1 class="hero-title">Point Camera at Leaf</h1>
-        <p class="hero-desc">Scans leaves and speaks simple guidance in local Indian languages.</p>
+        <p class="hero-desc">Click "Start Camera" to enable sound & local language voice output.</p>
         <select id="langSelect" class="lang-select">
             <option value="ta-IN">தமிழ் (Tamil)</option>
             <option value="hi-IN">हिंदी (Hindi)</option>
@@ -262,14 +260,14 @@
         </div>
 
         <div class="controls">
-            <button class="btn btn-primary" id="startBtn">📷 Start Camera</button>
+            <button class="btn btn-primary" id="startBtn">📷 Start Camera & Enable Sound</button>
             <button class="btn btn-secondary" id="stopBtn">Stop</button>
         </div>
 
         <div class="result-card" id="resultCard">
             <div class="result-title">
                 <span>📊 Farmer AI Diagnosis</span>
-                <button class="voice-btn" onclick="forceReplayVoice()">🔊 Replay Voice</button>
+                <button class="voice-btn" id="speakBtn">🔊 Play Voice Sound</button>
             </div>
 
             <div class="info-group">
@@ -300,6 +298,7 @@
         const video = document.getElementById('webcam');
         const startBtn = document.getElementById('startBtn');
         const stopBtn = document.getElementById('stopBtn');
+        const speakBtn = document.getElementById('speakBtn');
         const statusText = document.getElementById('statusText');
         const scanLine = document.getElementById('scanLine');
         const resultCard = document.getElementById('resultCard');
@@ -316,13 +315,12 @@
         let scanInterval = null;
         let selectedLang = 'ta-IN';
         let lastSpokenText = "";
-        let isSpeaking = false;
-        let synth = window.speechSynthesis;
+        let audioCtx = null;
 
-        // Multilingual Farmer Knowledge Base for India
+        // Multilingual Knowledge Base
         const database = {
             'ta-IN': {
-                noLeaf: "இலை கண்டறியப்படவில்லை. கேமரா முன் இலையை வைக்கவும்.",
+                noLeaf: "இலை கண்டறியப்படவில்லை. கேமரா முன் தாவர இலையை வைக்கவும்.",
                 healthy: {
                     name: "ஆரோக்கியமான இலை",
                     statusText: "HEALTHY - நோய் இல்லை",
@@ -330,7 +328,7 @@
                     speech: "பயிர் இலை நன்றாக உள்ளது. நோய் எதுவும் இல்லை. வழக்கம்போல் பராமரிக்கவும்."
                 },
                 blight: {
-                    name: "இலை கருகல் நோய் (Blight)",
+                    name: "இலை கருகல் நோய் (Blight Disease)",
                     statusText: "YES - குணப்படுத்த முடியும்",
                     cure: "பாதிக்கப்பட்ட இலையை கிள்ளி எறியவும். காப்பர் பூஞ்சை மருந்து தெளிக்கவும்.",
                     speech: "இலை கருகல் நோய் உள்ளது. பாதிக்கப்பட்ட இலையை அகற்றி காப்பர் மருந்து தெளிக்கவும்."
@@ -339,7 +337,7 @@
             'hi-IN': {
                 noLeaf: "पत्ती नहीं मिली। कृपया कैमरे के सामने पत्ती रखें।",
                 healthy: {
-                    name: "स्वस्थ पत्ती (Healthy)",
+                    name: "स्वस्थ पत्ती (Healthy Leaf)",
                     statusText: "HEALTHY - कोई बीमारी नहीं",
                     cure: "पत्ती स्वस्थ है। सामान्य पानी और खाद देते रहें।",
                     speech: "फसल की पत्ती बिल्कुल स्वस्थ है। कोई बीमारी नहीं है।"
@@ -458,57 +456,57 @@
             }
         };
 
-        // Geolocation to Auto-Select State Language in India
-        window.addEventListener('load', () => {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        const lat = position.coords.latitude;
-                        const lon = position.coords.longitude;
-                        
-                        // Map coordinates to Indian regions
-                        if (lat >= 8.0 && lat <= 13.5 && lon >= 76.0 && lon <= 80.3) {
-                            selectedLang = 'ta-IN'; // Tamil Nadu
-                            userLocation.textContent = "📍 Tamil Nadu";
-                        } else if (lat >= 14.0 && lat <= 19.0 && lon >= 77.0 && lon <= 84.0) {
-                            selectedLang = 'te-IN'; // Andhra / Telangana
-                            userLocation.textContent = "📍 Andhra/Telangana";
-                        } else if (lat >= 11.5 && lat <= 18.5 && lon >= 74.0 && lon <= 78.5) {
-                            selectedLang = 'kn-IN'; // Karnataka
-                            userLocation.textContent = "📍 Karnataka";
-                        } else if (lat >= 8.2 && lat <= 12.8 && lon >= 74.8 && lon <= 77.5) {
-                            selectedLang = 'ml-IN'; // Kerala
-                            userLocation.textContent = "📍 Kerala";
-                        } else if (lat >= 15.5 && lat <= 22.0 && lon >= 72.6 && lon <= 80.9) {
-                            selectedLang = 'mr-IN'; // Maharashtra
-                            userLocation.textContent = "📍 Maharashtra";
-                        } else {
-                            selectedLang = 'hi-IN'; // North India / Default Hindi
-                            userLocation.textContent = "📍 North India";
-                        }
-                        langSelect.value = selectedLang;
-                    },
-                    () => {
-                        selectedLang = 'ta-IN';
-                        langSelect.value = 'ta-IN';
-                        userLocation.textContent = "📍 India (Default)";
-                    }
-                );
+        // 1. Play Beep Sound (Instant Audio Feedback)
+        function playScanBeep() {
+            try {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(880, audioCtx.currentTime); // High pitch beep
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.15);
+            } catch (e) {
+                console.log("Audio play blocked");
             }
-        });
+        }
 
-        langSelect.addEventListener('change', (e) => {
-            selectedLang = e.target.value;
-            lastSpokenText = ""; 
-        });
+        // 2. Play Voice Speech
+        function speakText(text, lang) {
+            if (!('speechSynthesis' in window)) return;
 
-        // Start Camera & Unlock Browser Mobile Audio Restrictions
+            window.speechSynthesis.cancel(); // Clear any previous speech
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = lang;
+            utterance.rate = 0.85; // Natural speed for farmers
+            utterance.volume = 1.0; // Max volume
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // 3. User Action Trigger to Unlock Audio Context
         startBtn.addEventListener('click', async () => {
-            // Unlocks Speech Synthesis on Mobile (Chrome/Safari) via touch gesture
-            if (synth) {
-                const unlockUtterance = new SpeechSynthesisUtterance('');
-                synth.speak(unlockUtterance);
+            // Unlock Mobile Web Audio Context on Button Tap
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            audioCtx.resume();
+
+            // Pre-warm Speech Synthesis on User Gesture
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const dummy = new SpeechSynthesisUtterance('');
+                window.speechSynthesis.speak(dummy);
             }
+
+            playScanBeep();
 
             statusText.textContent = 'Starting camera...';
             try {
@@ -520,7 +518,7 @@
                 scanLine.style.display = 'block';
                 resultCard.style.display = 'block';
 
-                scanInterval = setInterval(validateAndPredict, 3000);
+                scanInterval = setInterval(validateAndPredict, 3500);
             } catch (err) {
                 alert("Camera Access Denied or Unavailable");
                 statusText.textContent = 'Camera Error';
@@ -532,11 +530,23 @@
             statusText.textContent = 'Automatic scanning off';
             scanLine.style.display = 'none';
             clearInterval(scanInterval);
-            if (synth) synth.cancel();
+            if ('speechSynthesis' in window) window.speechSynthesis.cancel();
             lastSpokenText = "";
-            isSpeaking = false;
         });
 
+        speakBtn.addEventListener('click', () => {
+            if (lastSpokenText) {
+                playScanBeep();
+                speakText(lastSpokenText, selectedLang);
+            }
+        });
+
+        langSelect.addEventListener('change', (e) => {
+            selectedLang = e.target.value;
+            lastSpokenText = "";
+        });
+
+        // 4. Strict Leaf Scanner & Voice Output Trigger
         function validateAndPredict() {
             if (!stream) return;
 
@@ -573,10 +583,10 @@
                 cureInstructions.textContent = selectedDisease.cure;
                 cureInstructions.className = "cure-box";
 
-                // Speak once per output
-                if (lastSpokenText !== selectedDisease.speech && !isSpeaking) {
+                if (lastSpokenText !== selectedDisease.speech) {
                     lastSpokenText = selectedDisease.speech;
-                    speakInLocalLanguage(selectedDisease.speech, selectedLang);
+                    playScanBeep(); // Beep Sound
+                    speakText(selectedDisease.speech, selectedLang); // Local Voice Output
                 }
             } else {
                 diseaseName.textContent = "No Leaf Detected";
@@ -588,40 +598,6 @@
                 cureInstructions.className = "cure-box cure-box-invalid";
                 
                 lastSpokenText = "";
-            }
-        }
-
-        // Reliable Speech Engine for All Indian Languages
-        function speakInLocalLanguage(text, langCode) {
-            if (!('speechSynthesis' in window)) {
-                alert("Speech Synthesis not supported in this browser");
-                return;
-            }
-
-            synth.cancel(); // Clear queued speech
-
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = langCode;
-            utterance.rate = 0.85; // Slightly slower speech speed for farmers
-            utterance.pitch = 1.0;
-
-            // Attempt to bind matching installed device voice
-            const voices = synth.getVoices();
-            const matchingVoice = voices.find(v => v.lang.startsWith(langCode.slice(0, 2)));
-            if (matchingVoice) {
-                utterance.voice = matchingVoice;
-            }
-
-            utterance.onstart = () => { isSpeaking = true; };
-            utterance.onend = () => { isSpeaking = false; };
-            utterance.onerror = () => { isSpeaking = false; };
-
-            synth.speak(utterance);
-        }
-
-        function forceReplayVoice() {
-            if (lastSpokenText) {
-                speakInLocalLanguage(lastSpokenText, selectedLang);
             }
         }
     </script>
