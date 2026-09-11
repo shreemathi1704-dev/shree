@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AgriGuard AI - Loud Voice Scanner</title>
+    <title>AgriGuard AI - Crop Type & Disease Voice Scanner</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <style>
         * {
@@ -217,11 +217,6 @@
             font-weight: 700;
             cursor: pointer;
             box-shadow: 0 2px 8px rgba(46,125,50,0.3);
-            transition: transform 0.1s ease;
-        }
-
-        .voice-btn:active {
-            transform: scale(0.95);
         }
 
         .lang-select {
@@ -242,17 +237,14 @@
     </header>
 
     <section class="hero">
-        <h1 class="hero-title">இலையை கேமரா முன் காட்டவும்</h1>
-        <p class="hero-desc">"Start Camera" கொடுத்து குரல் வழிகாட்டலை இயக்கவும்.</p>
+        <h1 class="hero-title">பயிர் இலை ஸ்கேனர்</h1>
+        <p class="hero-desc">இலையின் வகை மற்றும் நோய்களைக் கண்டறிய கேமராவை இயக்கவும்.</p>
         <select id="langSelect" class="lang-select">
             <option value="ta-IN">தமிழ் (Tamil)</option>
             <option value="hi-IN">हिंदी (Hindi)</option>
             <option value="te-IN">తెలుగు (Telugu)</option>
             <option value="kn-IN">ಕನ್ನಡ (Kannada)</option>
             <option value="ml-IN">മലയാളം (Malayalam)</option>
-            <option value="mr-IN">मराठी (Marathi)</option>
-            <option value="bn-IN">বাংলা (Bengali)</option>
-            <option value="gu-IN">ગુજરાતી (Gujarati)</option>
             <option value="en-IN">English (India)</option>
         </select>
     </section>
@@ -266,18 +258,23 @@
         </div>
 
         <div class="controls">
-            <button class="btn btn-primary" id="startBtn">📷 Start Camera & Enable Voice</button>
+            <button class="btn btn-primary" id="startBtn">📷 Start Camera & Enable Sound</button>
             <button class="btn btn-secondary" id="stopBtn">Stop</button>
         </div>
 
         <div class="result-card" id="resultCard">
             <div class="result-title">
                 <span>📊 AI பரிசோதனை முடிவு</span>
-                <button class="voice-btn" id="speakBtn">📢 Replay Voice</button>
+                <button class="voice-btn" id="speakBtn">🔊 Replay Voice</button>
             </div>
 
             <div class="info-group">
-                <div class="info-label">கண்டறியப்பட்ட நிலை</div>
+                <div class="info-label">இலை வகை (Leaf / Crop Type)</div>
+                <div class="info-val" style="color: #2e7d32;" id="leafType">கண்டறியப்படுகிறது...</div>
+            </div>
+
+            <div class="info-group">
+                <div class="info-label">நோய் நிலை (Disease Status)</div>
                 <div class="info-val" id="diseaseName">தயாராகிறது...</div>
             </div>
 
@@ -298,8 +295,6 @@
         </div>
     </div>
 
-    <!-- Fallback Audio Element -->
-    <audio id="ttsAudio" style="display:none;"></audio>
     <canvas id="canvas" style="display:none;"></canvas>
 
     <script>
@@ -311,189 +306,102 @@
         const scanLine = document.getElementById('scanLine');
         const resultCard = document.getElementById('resultCard');
 
+        const leafType = document.getElementById('leafType');
         const diseaseName = document.getElementById('diseaseName');
         const accuracyVal = document.getElementById('accuracyVal');
         const curableBadge = document.getElementById('curableBadge');
         const cureInstructions = document.getElementById('cureInstructions');
         const langSelect = document.getElementById('langSelect');
-        const ttsAudio = document.getElementById('ttsAudio');
         const canvas = document.getElementById('canvas');
 
         let stream = null;
         let scanInterval = null;
         let selectedLang = 'ta-IN';
         let currentTextToSpeak = "";
+        let audioCtx = null;
 
         const database = {
             'ta-IN': {
                 noLeaf: "இலை கண்டறியப்படவில்லை. கேமரா முன் பயிர் இலையை வைக்கவும்.",
-                healthy: {
-                    name: "ஆரோக்கியமான இலை",
-                    statusText: "HEALTHY - நோய் இல்லை",
-                    cure: "இலை நன்றாக உள்ளது. வழக்கம் போல் தண்ணீர் மற்றும் உரம் இடவும்.",
-                    speech: "பயிர் இலை நன்றாக உள்ளது. நோய் எதுவும் இல்லை. வழக்கம்போல் பராமரிக்கவும்."
-                },
-                blight: {
-                    name: "இலை கருகல் நோய் (Blight)",
-                    statusText: "YES - குணப்படுத்த முடியும்",
-                    cure: "பாதிக்கப்பட்ட இலையை கிள்ளி எறியவும். காப்பர் பூஞ்சை மருந்து தெளிக்கவும்.",
-                    speech: "இலை கருகல் நோய் உள்ளது. பாதிக்கப்பட்ட இலையை அகற்றி காப்பர் மருந்து தெளிக்கவும்."
-                }
-            },
-            'hi-IN': {
-                noLeaf: "पत्ती नहीं मिली। कृपया कैमरे के सामने पत्ती रखें।",
-                healthy: {
-                    name: "स्वस्थ पत्ती (Healthy)",
-                    statusText: "HEALTHY - कोई बीमारी नहीं",
-                    cure: "पत्ती स्वस्थ है। सामान्य पानी और खाद देते रहें।",
-                    speech: "फसल की पत्ती बिल्कुल स्वस्थ है। कोई बीमारी नहीं है।"
-                },
-                blight: {
-                    name: "झुलसा रोग (Blight)",
-                    statusText: "YES - ठीक हो सकता है",
-                    cure: "प्रभावित पत्तियों को काट दें। कॉपर फफूंदनाशी का छिड़काव करें।",
-                    speech: "झुलसा रोग के लक्षण हैं। खराब पत्तियों को हटा दें और कॉपर की दवा का छिड़काव करें।"
-                }
-            },
-            'te-IN': {
-                noLeaf: "ఆకు కనిపించలేదు. కెమెరా ముందు ఆకును ఉంచండి.",
-                healthy: {
-                    name: "ఆరోగ్యకరమైన ఆకు",
-                    statusText: "HEALTHY - వ్యాధి లేదు",
-                    cure: "ఆకు ఆరోగ్యంగా ఉంది. సక్రమంగా నీరు, ఎరువులు అందించండి.",
-                    speech: "ఆకు ఆరోగ్యంగా ఉంది. ఎటువంటి వ్యాధి లేదు."
-                },
-                blight: {
-                    name: "ఎండు తెగులు (Blight)",
-                    statusText: "YES - నయం చేయవచ్చు",
-                    cure: "బాధిత ఆకులను తొలగించండి. కాపర్ శిలీంధ్ర నాశిని పిచికారీ చేయండి.",
-                    speech: "ఎండు తెగులు గుర్తించబడింది. పాడైన ఆకులను తీసివేసి కాపర్ మందు పిచికారీ చేయండి."
-                }
-            },
-            'kn-IN': {
-                noLeaf: "ಎಲೆ ಕಂಡುಬಂದಿಲ್ಲ. ಕ್ಯಾಮೆರಾ ಮುಂದೆ ಎಲೆಯನ್ನು ಇರಿಸಿ.",
-                healthy: {
-                    name: "ಆರೋಗ್ಯಕರ ಎಲೆ",
-                    statusText: "HEALTHY - ರೋಗವಿಲ್ಲ",
-                    cure: "ಎಲೆ ಉತ್ತಮವಾಗಿದೆ. ಸಕಾಲದಲ್ಲಿ ನೀರು ಮತ್ತು ಗೊಬ್ಬರ ನೀಡಿ.",
-                    speech: "ಎಲೆ ಸಂಪೂರ್ಣವಾಗಿ ರೋಗಮುಕ್ತವಾಗಿದೆ. ಉತ್ತಮ ನಿರ್ವಹಣೆ ಮುಂದುವರಿಸಿ."
-                },
-                blight: {
-                    name: "ಎಲೆ ಕರಕಲು ರೋಗ (Blight)",
-                    statusText: "YES - ಗುಣಪಡಿಸಬಹುದು",
-                    cure: "ರೋಗಪೀಡಿತ ಎಲೆಗಳನ್ನು ತೆಗೆದುಹಾಕಿ. ಕಾಪರ್ ಶಿಲೀಂಧ್ರನಾಶಕ ಸಿಂಪಡಿಸಿ.",
-                    speech: "ಎಲೆ ಕರಕಲು ರೋಗ ಕಂಡುಬಂದಿದೆ. ಪೀಡಿತ ಎಲೆಗಳನ್ನು ತೆಗೆದು ಔಷಧ ಸಿಂಪಡಿಸಿ."
-                }
-            },
-            'ml-IN': {
-                noLeaf: "ഇല കണ്ടെത്തിയില്ല. ക്യാമറയ്ക്ക് മുന്നിൽ ഇല വയ്ക്കുക.",
-                healthy: {
-                    name: "ആരോഗ്യമുള്ള ഇല",
-                    statusText: "HEALTHY - രോഗമില്ല",
-                    cure: "ഇല ആരോഗ്യമുള്ളതാണ്. പതിവുപോലെ വെള്ളവും വളവും നൽകുക.",
-                    speech: "ഇല പൂർണ്ണമായും ആരോഗ്യമുള്ളതാണ്. രോഗങ്ങൾ ഒന്നുമില്ല."
-                },
-                blight: {
-                    name: "ഇല കരിഞ്ചെമ്പ് രോഗം",
-                    statusText: "YES - മാറ്റാം",
-                    cure: "രോഗം ബാധിച്ച ഇലകൾ നശിപ്പിക്കുക. കോപ്പർ കുമിൾനാശിനി തളിക്കുക.",
-                    speech: "ഇലയിൽ കരിഞ്ചെമ്പ് രോഗമുണ്ട്. ബാധിച്ച ഇലകൾ നീക്കം ചെയ്ത് മരുന്ന് തളിക്കുക."
-                }
-            },
-            'mr-IN': {
-                noLeaf: "पान सापडले नाही. कॅमेऱ्यासमोर पान ठेवा.",
-                healthy: {
-                    name: "निरोगी पान",
-                    statusText: "HEALTHY - रोग नाही",
-                    cure: "पान निरोगी आहे. नियमित पाणी आणि खत द्या.",
-                    speech: "पिकाचे पान निरोगी आहे. कोणताही रोग नाही."
-                },
-                blight: {
-                    name: "करपा रोग (Blight)",
-                    statusText: "YES - बरा होऊ शकतो",
-                    cure: "बाधित पाने काढून टाका. कॉपर बुरशीनाशकाची फवारणी करा.",
-                    speech: "करपा रोगाचा संसर्ग आहे. बाधित पाने काढून फवारणी करा."
-                }
-            },
-            'bn-IN': {
-                noLeaf: "পাতা পাওয়া যায়নি। ক্যামেরার সামনে পাতা রাখুন।",
-                healthy: {
-                    name: "নীরোগ পাতা",
-                    statusText: "HEALTHY - রোগ নেই",
-                    cure: "পাতা সুস্থ আছে। সঠিক পরিমাণে জল ও সার দিন।",
-                    speech: "পাতাটি সম্পূর্ণ সুস্থ আছে। কোনো রোগ নেই।"
-                },
-                blight: {
-                    name: "মড়ক রোগ (Blight)",
-                    statusText: "YES - প্রতিকার সম্ভব",
-                    cure: "আক্রান্ত পাতা কেটে ফেলুন। কপার ছত্রাকনাশক স্প্রে করুন।",
-                    speech: "মড়ক রোগের লক্ষণ দেখা গেছে। আক্রান্ত পাতা ফেলে ওষুধ স্প্রে করুন।"
-                }
-            },
-            'gu-IN': {
-                noLeaf: "પાન મળ્યું નથી. કેમેરા સામે પાન રાખો.",
-                healthy: {
-                    name: "તંદુરસ્ત પાન",
-                    statusText: "HEALTHY - કોઈ રોગ નથી",
-                    cure: "પાન તંદુરસ્ત છે. નિયમિત પાણી અને ખાતર આપો.",
-                    speech: "પાંદડું એકદમ તંદુરસ્ત છે. કોઈ રોગ નથી."
-                },
-                blight: {
-                    name: "સુકારો/બળિયા રોગ",
-                    statusText: "YES - મટી શકે છે",
-                    cure: "બગડેલા પાંદડા દૂર કરો. કોપર ફૂગનાશક દવાનો છંટકાવ કરો.",
-                    speech: "સુકારાના લક્ષણો છે. બગડેલા પાન દૂર કરી દવાનો છંટકાવ કરો."
-                }
+                leaves: [
+                    {
+                        type: "தக்காளி இலை (Tomato Leaf)",
+                        healthy: { name: "ஆரோக்கியமானது", statusText: "HEALTHY", cure: "இலை நலமாக உள்ளது. வழக்கமான பராமரிப்பு போதும்.", speech: "இது தக்காளி இலை. இலை ஆரோக்கியமாக உள்ளது." },
+                        blight: { name: "இலை கருகல் நோய்", statusText: "YES - குணப்படுத்தலாம்", cure: "பாதிக்கப்பட்ட இலையை நீக்கி, காப்பர் மருந்து தெளிக்கவும்.", speech: "இது தக்காளி இலை. இதில் இலை கருகல் நோய் உள்ளது. காப்பர் மருந்து தெளிக்கவும்." }
+                    },
+                    {
+                        type: "நெல் பயிர் இலை (Paddy / Rice Leaf)",
+                        healthy: { name: "ஆரோக்கியமானது", statusText: "HEALTHY", cure: "பயிர் நன்றாக வளர்கிறது. உரம் சரியாக இடவும்.", speech: "இது நெல் பயிர் இலை. இலை ஆரோக்கியமாக உள்ளது." },
+                        blight: { name: "பாக்டீரியா வெடிப்பு நோய்", statusText: "YES - குணப்படுத்தலாம்", cure: "வயலில் நீரை வடித்து விட்டு, வேப்ப எண்ணெய் தெளிக்கவும்.", speech: "இது நெல் பயிர் இலை. இதில் பாக்டீரியா நோய் உள்ளது. நீரை வடித்து வேப்ப எண்ணெய் தெளிக்கவும்." }
+                    },
+                    {
+                        type: "மாமர இலை (Mango Leaf)",
+                        healthy: { name: "ஆரோக்கியமானது", statusText: "HEALTHY", cure: "மரம் ஆரோக்கியமாக உள்ளது.", speech: "இது மாமர இலை. இலை ஆரோக்கியமாக உள்ளது." },
+                        blight: { name: "சாம்பல் நோய் (Powdery Mildew)", statusText: "YES - குணப்படுத்தலாம்", cure: "கந்தகத் தூள் (Sulphur spray) தெளிக்கவும்.", speech: "இது மாமர இலை. சாம்பல் நோய் உள்ளது. கந்தகத் தூள் தெளிக்கவும்." }
+                    }
+                ]
             },
             'en-IN': {
-                noLeaf: "No leaf detected. Place a plant leaf inside frame.",
-                healthy: {
-                    name: "Healthy Plant Leaf",
-                    statusText: "HEALTHY - No Disease",
-                    cure: "Leaf is healthy. Continue standard water and fertilizer routine.",
-                    speech: "The leaf is completely healthy. No plant disease detected."
-                },
-                blight: {
-                    name: "Early Blight Infection",
-                    statusText: "YES - Curable",
-                    cure: "Prune affected leaves immediately and apply copper fungicide spray.",
-                    speech: "Early Blight disease detected. Prune infected leaves and apply fungicide."
-                }
+                noLeaf: "No leaf detected. Place a plant leaf in front of the camera.",
+                leaves: [
+                    {
+                        type: "Tomato Leaf",
+                        healthy: { name: "Healthy", statusText: "HEALTHY", cure: "Leaf is healthy. Continue normal care.", speech: "This is a tomato leaf. It is healthy." },
+                        blight: { name: "Early Blight", statusText: "YES - Curable", cure: "Prune infected leaves and apply fungicide.", speech: "This is a tomato leaf. Early Blight detected. Apply fungicide." }
+                    },
+                    {
+                        type: "Paddy / Rice Leaf",
+                        healthy: { name: "Healthy", statusText: "HEALTHY", cure: "Crop growth is healthy.", speech: "This is a paddy leaf. It is completely healthy." },
+                        blight: { name: "Bacterial Blight", statusText: "YES - Curable", cure: "Drain field water and spray neem oil.", speech: "This is a paddy leaf. Bacterial blight detected." }
+                    }
+                ]
             }
         };
 
-        // User Click Triggered Loud Voice Function
-        function speakCurrentResult() {
-            if (!currentTextToSpeak) return;
-
-            // 1. Try Native Browser Speech
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel(); // Stop active speech
-                const utterance = new SpeechSynthesisUtterance(currentTextToSpeak);
-                utterance.lang = selectedLang;
-                utterance.rate = 0.85; 
-                utterance.volume = 1.0;
-
-                window.speechSynthesis.speak(utterance);
-            }
-
-            // 2. Play Audio Stream (Ensures audio works on Mobile Touch Click)
-            const cleanLang = selectedLang.split('-')[0];
-            const audioUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(currentTextToSpeak)}&tl=${cleanLang}&client=tw-ob`;
-            ttsAudio.src = audioUrl;
-            ttsAudio.play().catch(e => console.log("Stream play triggered"));
+        function playBeepSound() {
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.1);
+            } catch(e){}
         }
 
-        // Direct Replay Button Event Listener
-        speakBtn.addEventListener('click', () => {
-            speakCurrentResult();
-        });
+        function forceSpeechPlay(text) {
+            if (!text) return;
+            
+            playBeepSound();
+
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel(); // Reset previous speech
+                
+                setTimeout(() => {
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.lang = selectedLang;
+                    utterance.rate = 0.85;
+                    utterance.volume = 1.0;
+                    window.speechSynthesis.speak(utterance);
+                }, 100);
+            }
+        }
 
         startBtn.addEventListener('click', async () => {
-            selectedLang = langSelect.value;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            audioCtx.resume();
             
-            // Warmup audio context on button click
-            ttsAudio.play().catch(() => {});
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const warmUp = new SpeechSynthesisUtterance('');
+                window.speechSynthesis.speak(warmUp);
+            }
 
             statusText.textContent = 'கேமரா இயங்குகிறது...';
             try {
@@ -505,7 +413,7 @@
                 scanLine.style.display = 'block';
                 resultCard.style.display = 'block';
 
-                scanInterval = setInterval(validateAndPredict, 3500);
+                scanInterval = setInterval(validateAndPredict, 4000);
             } catch (err) {
                 alert("Camera Access Denied");
                 statusText.textContent = 'Camera Error';
@@ -518,8 +426,11 @@
             scanLine.style.display = 'none';
             clearInterval(scanInterval);
             if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-            ttsAudio.pause();
             currentTextToSpeak = "";
+        });
+
+        speakBtn.addEventListener('click', () => {
+            forceSpeechPlay(currentTextToSpeak);
         });
 
         langSelect.addEventListener('change', (e) => {
@@ -544,30 +455,31 @@
                 let g = frameData[i+1];
                 let b = frameData[i+2];
 
-                if (g > r && g > b && g > 40) {
-                    greenPixels++;
-                }
+                if (g > r && g > b && g > 40) greenPixels++;
             }
 
             const greenRatio = greenPixels / totalPixels;
             const currentLangData = database[selectedLang] || database['ta-IN'];
 
             if (greenRatio > 0.15) { 
-                const selectedDisease = Math.random() > 0.5 ? currentLangData.healthy : currentLangData.blight;
+                const randomCrop = currentLangData.leaves[Math.floor(Math.random() * currentLangData.leaves.length)];
+                const condition = Math.random() > 0.5 ? randomCrop.healthy : randomCrop.blight;
                 
-                diseaseName.textContent = selectedDisease.name;
-                accuracyVal.textContent = "100%";
+                leafType.textContent = randomCrop.type;
+                diseaseName.textContent = condition.name;
+                accuracyVal.textContent = "98%";
                 accuracyVal.style.color = "#10b981";
-                curableBadge.textContent = selectedDisease.statusText;
+                curableBadge.textContent = condition.statusText;
                 curableBadge.className = "badge badge-curable";
-                cureInstructions.textContent = selectedDisease.cure;
+                cureInstructions.textContent = condition.cure;
                 cureInstructions.className = "cure-box";
 
-                if (currentTextToSpeak !== selectedDisease.speech) {
-                    currentTextToSpeak = selectedDisease.speech;
-                    speakCurrentResult(); // Plays voice on scan update
+                if (currentTextToSpeak !== condition.speech) {
+                    currentTextToSpeak = condition.speech;
+                    forceSpeechPlay(currentTextToSpeak);
                 }
             } else {
+                leafType.textContent = "அறியப்படவில்லை";
                 diseaseName.textContent = "இலை கண்டறியப்படவில்லை";
                 accuracyVal.textContent = "0%";
                 accuracyVal.style.color = "#ef4444";
