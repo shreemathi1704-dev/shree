@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AgriGuard AI - Smart Leaf Scanner with Regional Voice</title>
+    <title>AgriGuard AI - Smart Leaf Scanner with Single Voice Output</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <style>
         * {
@@ -228,7 +228,7 @@
 
     <section class="hero">
         <h1 class="hero-title">Point Camera at Leaf</h1>
-        <p class="hero-desc">Align the leaf inside frame. Diagnosis will be spoken in regional language.</p>
+        <p class="hero-desc">Align leaf inside frame. AI speaks diagnosis once in your regional language.</p>
     </section>
 
     <div class="scanner-container">
@@ -247,7 +247,7 @@
         <div class="result-card" id="resultCard">
             <div class="result-title">
                 <span>📊 Verified AI Diagnosis</span>
-                <button class="voice-btn" onclick="speakCurrentResult()">🔊 Speak</button>
+                <button class="voice-btn" onclick="replayVoice()">🔊 Replay Voice</button>
             </div>
 
             <div class="info-group">
@@ -291,13 +291,16 @@
 
         let stream = null;
         let scanInterval = null;
-        let regionalLang = 'en-US'; // Default Language Code
+        let regionalLang = 'en-US';
+        
+        // Voice State Management: Ensures audio triggers ONLY ONCE per unique detection
         let lastSpokenText = "";
+        let isSpeaking = false; 
 
-        // Multilingual Knowledge Base (Tamil & English fallback based on location)
         const database = {
             'ta-IN': [
                 {
+                    id: "healthy",
                     name: "Healthy Leaf (ஆரோக்கியமான இலை)",
                     accuracy: "100%",
                     statusClass: "badge-curable",
@@ -306,6 +309,7 @@
                     speech: "இலை ஆரோக்கியமாக உள்ளது. எந்த நோயும் கண்டறியப்படவில்லை."
                 },
                 {
+                    id: "blight",
                     name: "Early Blight (முன்பருவ பிளைட் நோய்)",
                     accuracy: "100%",
                     statusClass: "badge-curable",
@@ -314,6 +318,7 @@
                     speech: "முன்பருவ பிளைட் நோய் கண்டறியப்பட்டுள்ளது. இதை குணப்படுத்த முடியும். பாதிக்கப்பட்ட இலைகளை அகற்றி காப்பர் பூஞ்சைக் கொல்லி தெளிக்கவும்."
                 },
                 {
+                    id: "virus",
                     name: "Yellow Leaf Curl Virus (மஞ்சள் சுருள் வைரஸ்)",
                     accuracy: "100%",
                     statusClass: "badge-not-curable",
@@ -324,6 +329,7 @@
             ],
             'en-US': [
                 {
+                    id: "healthy",
                     name: "Healthy Leaf",
                     accuracy: "100%",
                     statusClass: "badge-curable",
@@ -332,6 +338,7 @@
                     speech: "The leaf is completely healthy. No disease detected."
                 },
                 {
+                    id: "blight",
                     name: "Tomato Early Blight",
                     accuracy: "100%",
                     statusClass: "badge-curable",
@@ -340,6 +347,7 @@
                     speech: "Early Blight disease detected. It is curable. Remove infected leaves and apply copper fungicide."
                 },
                 {
+                    id: "virus",
                     name: "Yellow Leaf Curl Virus",
                     accuracy: "100%",
                     statusClass: "badge-not-curable",
@@ -350,15 +358,13 @@
             ]
         };
 
-        // 1. Detect Geolocation & Set Regional Language
+        // Geolocation Detection
         window.addEventListener('load', () => {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     (position) => {
                         const lat = position.coords.latitude;
                         const lon = position.coords.longitude;
-                        
-                        // Inverse Geocoding Check for India / Tamil Nadu
                         if (lat >= 8.0 && lat <= 13.5 && lon >= 76.0 && lon <= 80.3) {
                             regionalLang = 'ta-IN';
                             userLocation.textContent = "📍 Tamil Nadu, India (Tamil Assistant)";
@@ -368,14 +374,13 @@
                         }
                     },
                     (err) => {
-                        regionalLang = 'ta-IN'; // Default to Regional Tamil if location permission denied
+                        regionalLang = 'ta-IN';
                         userLocation.textContent = "📍 Tamil Nadu, India (Default)";
                     }
                 );
             }
         });
 
-        // 2. Camera Controls & Interval Triggering
         startBtn.addEventListener('click', async () => {
             statusText.textContent = 'Starting camera...';
             try {
@@ -400,9 +405,10 @@
             scanLine.style.display = 'none';
             clearInterval(scanInterval);
             window.speechSynthesis.cancel();
+            lastSpokenText = "";
+            isSpeaking = false;
         });
 
-        // 3. Strict 100% Leaf Filter and Output Processing
         function validateAndPredict() {
             if (!stream) return;
 
@@ -439,10 +445,10 @@
                 cureInstructions.textContent = selectedDisease.cure;
                 cureInstructions.className = "cure-box";
 
-                // Speak voice output only if the result changes
-                if (lastSpokenText !== selectedDisease.speech) {
+                // Voice Logic: Speaks ONLY ONCE per detection result
+                if (lastSpokenText !== selectedDisease.speech && !isSpeaking) {
                     lastSpokenText = selectedDisease.speech;
-                    speakText(selectedDisease.speech);
+                    speakOnce(selectedDisease.speech);
                 }
             } else {
                 diseaseName.textContent = regionalLang === 'ta-IN' ? "இலை கண்டறியப்படவில்லை" : "No Leaf Detected";
@@ -452,24 +458,32 @@
                 curableBadge.className = "badge badge-invalid";
                 cureInstructions.textContent = regionalLang === 'ta-IN' ? "கேமரா கட்டத்திற்குள் தாவர இலையை வைக்கவும்." : "Please align a plant leaf directly inside camera frame.";
                 cureInstructions.className = "cure-box cure-box-invalid";
+                
+                // Reset state when non-leaf object is shown
                 lastSpokenText = "";
             }
         }
 
-        // 4. Voice Assistant Engine (SpeechSynthesis API)
-        function speakText(text) {
+        // Single-trigger Voice Engine
+        function speakOnce(text) {
             if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel(); // Stop ongoing speech
+                window.speechSynthesis.cancel(); // Stop active playback
+
                 const utterance = new SpeechSynthesisUtterance(text);
                 utterance.lang = regionalLang;
-                utterance.rate = 0.9; // Natural speech speed
+                utterance.rate = 0.9;
+
+                utterance.onstart = () => { isSpeaking = true; };
+                utterance.onend = () => { isSpeaking = false; };
+                utterance.onerror = () => { isSpeaking = false; };
+
                 window.speechSynthesis.speak(utterance);
             }
         }
 
-        function speakCurrentResult() {
+        function replayVoice() {
             if (lastSpokenText) {
-                speakText(lastSpokenText);
+                speakOnce(lastSpokenText);
             }
         }
     </script>
