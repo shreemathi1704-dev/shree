@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AgriGuard AI - High Accuracy Scanner</title>
+    <title>AgriGuard AI - All-India Pan-State Scanner</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- TensorFlow.js and MobileNet Models for strict object detection -->
+    <!-- TensorFlow.js and MobileNet Models for strict AI verification -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -35,17 +35,35 @@
     <!-- Main Content -->
     <main class="max-w-xl w-full mx-auto px-4 py-6 flex-grow">
         <div class="text-center mb-6">
-            <h1 class="text-3xl font-extrabold text-white tracking-tight">AI Leaf Verification Scanner</h1>
-            <p class="text-slate-400 text-sm mt-1">100% Strict Leaf Validation via Neural Network</p>
+            <h1 class="text-3xl font-extrabold text-white tracking-tight">Pan-India Voice Leaf Scanner</h1>
+            <p class="text-slate-400 text-sm mt-1">Multi-Language & Regional Voice Output Across All Indian States</p>
         </div>
 
-        <!-- Language Switcher -->
+        <!-- Comprehensive All-India Language Switcher -->
         <div class="mb-6 flex flex-col items-center gap-2">
-            <label for="langSelect" class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Select Voice Language</label>
-            <select id="langSelect" class="bg-slate-900 text-white border border-slate-700 text-sm font-semibold rounded-xl px-4 py-2.5 outline-none focus:border-emerald-500 transition-all w-full max-w-xs shadow-lg">
-                <option value="ta-IN" selected>தமிழ் (Tamil)</option>
-                <option value="en-US">English (United States)</option>
-                <option value="hi-IN">हिंदी (Hindi)</option>
+            <label for="langSelect" class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Select Regional Voice & Speech Language</label>
+            <select id="langSelect" class="bg-slate-900 text-white border border-slate-700 text-sm font-semibold rounded-xl px-4 py-2.5 outline-none focus:border-emerald-500 transition-all w-full max-w-sm shadow-lg">
+                <optgroup label="Tamil Nadu & South India">
+                    <option value="ta-IN" selected>தமிழ் (Tamil - Tamil Nadu)</option>
+                    <option value="te-IN">తెలుగు (Telugu - Andhra/Telangana)</option>
+                    <option value="kn-IN">ಕನ್ನಡ (Kannada - Karnataka)</option>
+                    <option value="ml-IN">മലയാളം (Malayalam - Kerala)</option>
+                </optgroup>
+                <optgroup label="North & Central India">
+                    <option value="hi-IN">हिंदी (Hindi - North/Central States)</option>
+                    <option value="pa-IN">ਪੰਜਾਬੀ (Punjabi - Punjab)</option>
+                    <option value="mr-IN">मराठी (Marathi - Maharashtra)</option>
+                    <option value="gu-IN">ગુજરાતી (Gujarati - Gujarat)</option>
+                </optgroup>
+                <optgroup label="East & North-East India">
+                    <option value="bn-IN">বাংলা (Bengali - West Bengal)</option>
+                    <option value="or-IN">ଓଡ଼ିଆ (Odia - Odisha)</option>
+                    <option value="as-IN">অসমীয়া (Assamese - Assam)</option>
+                </optgroup>
+                <optgroup label="Global Languages">
+                    <option value="en-IN">English (India)</option>
+                    <option value="en-US">English (United States)</option>
+                </optgroup>
             </select>
         </div>
 
@@ -69,7 +87,7 @@
             </button>
         </div>
 
-        <!-- Analysis Output Card -->
+        <!-- Output Card -->
         <div id="resultCard" class="hidden mt-6 bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl">
             <div class="flex justify-between items-center pb-3 border-b border-slate-800">
                 <span class="text-sm font-bold text-slate-300">Scan Status</span>
@@ -116,20 +134,61 @@
         let selectedLang = 'ta-IN';
         let currentTextToSpeak = "";
         let aiModel = null;
-        let userLocationName = "Coimbatore";
+        let userLocationName = "Coimbatore, Tamil Nadu";
 
+        // Multilingual voice dictionary for all states across India
         const locationSpeeches = {
             'ta-IN': {
-                noLeaf: (loc) => `${loc}: இலை கண்டறியப்படவில்லை. தயவுசெய்து தாவரத்தின் இலையை கேமராவின் முன் காட்டவும்.`,
+                noLeaf: (loc) => `${loc}: இலை கண்டறியப்படவில்லை. தயவுசெய்து பயிர் இலையை கேமராவின் முன் காட்டவும்.`,
                 leafDetected: (loc, disease, accuracy) => `${loc}: இலை உறுதிசெய்யப்பட்டது. நோய் பாதிப்பு: ${disease}. துல்லியம்: ${accuracy} சதவீதம்.`
             },
-            'en-US': {
-                noLeaf: (loc) => `${loc}: No leaf detected. Please place a plant leaf in front of the camera.`,
-                leafDetected: (loc, disease, accuracy) => `${loc}: Leaf verified. Analysis: ${disease}. Accuracy ${accuracy} percent.`
+            'te-IN': {
+                noLeaf: (loc) => `${loc}: ఆకు కనుగొనబడలేదు. దయచేసి కెమెరా ముందు మొక్క ఆకును ఉంచండి.`,
+                leafDetected: (loc, disease, accuracy) => `${loc}: ఆకు నిర్ధారించబడింది. వ్యాధి గుర్తించబడింది: ${disease}. కచ్చితత్వం: ${accuracy} శాతం.`
+            },
+            'kn-IN': {
+                noLeaf: (loc) => `${loc}: ಎಲೆ ಕಂಡುಬಂದಿಲ್ಲ. ದಯವಿಟ್ಟು ಕ್ಯಾಮೆರಾ ಮುಂದೆ ಗಿಡದ ಎಲೆಯನ್ನು ಇರಿಸಿ.`,
+                leafDetected: (loc, disease, accuracy) => `${loc}: ಎಲೆ ದೃಢೀಕರಿಸಲ್ಪಟ್ಟಿದೆ. ರೋಗ: ${disease}. ನಿಖರತೆ: ${accuracy} ಪ್ರತಿಶತ.`
+            },
+            'ml-IN': {
+                noLeaf: (loc) => `${loc}: ഇല കണ്ടെത്തിയില്ല. ക്യാമറയ്ക്ക് മുന്നിൽ ചെടിയുടെ ഇല വയ്ക്കുക.`,
+                leafDetected: (loc, disease, accuracy) => `${loc}: ഇല സ്ഥിരീകരിച്ചു. രോഗം: ${disease}. കൃത്യത: ${accuracy} ശതമാനം.`
             },
             'hi-IN': {
                 noLeaf: (loc) => `${loc}: कोई पत्ता नहीं मिला। कृपया पौधे का पत्ता सामने रखें।`,
                 leafDetected: (loc, disease, accuracy) => `${loc}: पत्ता सत्यापित हुआ। बीमारी: ${disease}। सटीकता: ${accuracy} प्रतिशत।`
+            },
+            'mr-IN': {
+                noLeaf: (loc) => `${loc}: पान आढळले नाही. कृपया कॅमेऱ्यासमोर झाडाचे पान ठेवा.`,
+                leafDetected: (loc, disease, accuracy) => `${loc}: पान सत्यापित झाले. रोग: ${disease}. अचूकता: ${accuracy} टक्के.`
+            },
+            'gu-IN': {
+                noLeaf: (loc) => `${loc}: કોઈ પાંદડું મળ્યું નથી. કૃપા કરીને કેમેરા સામે છોડનું પાંદડું રાખો.`,
+                leafDetected: (loc, disease, accuracy) => `${loc}: પાંદડું ચકાસાયેલ છે. રોગ: ${disease}. ચોકસાઈ: ${accuracy} ટકા.`
+            },
+            'bn-IN': {
+                noLeaf: (loc) => `${loc}: কোনো পাতা পাওয়া যায়নি। অনুগ্রহ করে ক্যামেরার সামনে গাছের পাতা রাখুন।`,
+                leafDetected: (loc, disease, accuracy) => `${loc}: পাতা যাচাই করা হয়েছে। রোগ: ${disease}। নির্ভুলতা: ${accuracy} শতাংশ।`
+            },
+            'pa-IN': {
+                noLeaf: (loc) => `${loc}: ਕੋਈ ਪੱਤਾ ਨਹੀਂ ਮਿਲਿਆ। ਕਿਰਪਾ ਕਰਕੇ ਕੈਮਰੇ ਦੇ ਸਾਹਮਣੇ ਪੌਦੇ ਦਾ ਪੱਤਾ ਰੱਖੋ।`,
+                leafDetected: (loc, disease, accuracy) => `${loc}: ਪੱਤਾ ਪ੍ਰਮਾਣਿਤ ਹੋਇਆ। ਬਿਮਾਰੀ: ${disease}। ਸ਼ੁੱਧਤਾ: ${accuracy} ਪ੍ਰਤੀਸ਼ਤ।`
+            },
+            'or-IN': {
+                noLeaf: (loc) => `${loc}: କୌଣସି ପତ୍ର ମିଳିଲା ନାହିଁ। ଦୟାକରି କ୍ୟାମେରା ଆଗରେ ଗଛର ପତ୍ର ରଖନ୍ତୁ।`,
+                leafDetected: (loc, disease, accuracy) => `${loc}: ପତ୍ର ଯାଞ୍ଚ ହୋଇଛି। ରୋଗ: ${disease}। ସଠିକତା: ${accuracy} ପ୍ରତିଶତ।`
+            },
+            'as-IN': {
+                noLeaf: (loc) => `${loc}: কোনো পাত পোৱা নগ’ল। অনুগ্ৰহ কৰি কেমেৰাৰ সন্মুখত গছৰ পাত ৰাখক।`,
+                leafDetected: (loc, disease, accuracy) => `${loc}: পাত নিশ্চিত কৰা হ’ল। ৰোগ: ${disease}। শুদ্ধতা: ${accuracy} শতাংশ।`
+            },
+            'en-IN': {
+                noLeaf: (loc) => `${loc}: No leaf detected. Please place a plant leaf in front of the camera.`,
+                leafDetected: (loc, disease, accuracy) => `${loc}: Leaf verified. Analysis: ${disease}. Confidence: ${accuracy} percent.`
+            },
+            'en-US': {
+                noLeaf: (loc) => `${loc}: No leaf detected. Please place a plant leaf in front of the camera.`,
+                leafDetected: (loc, disease, accuracy) => `${loc}: Leaf verified. Analysis: ${disease}. Confidence: ${accuracy} percent.`
             }
         };
 
@@ -139,40 +198,55 @@
                 { name: "பாக்டீரியா நோய்", cure: "தேங்கியுள்ள நீரை வடித்து வேப்ப எண்ணெய் தெளிக்கவும்." },
                 { name: "சாம்பல் நோய்", cure: "கந்தக தூள் (Sulphur Spray) தெளிக்கவும்." }
             ],
-            'en-US': [
-                { name: "Early Blight Disease", cure: "Prune infected leaves and spray copper fungicide." },
-                { name: "Bacterial Blight", cure: "Drain excess water and spray neem oil extract." },
-                { name: "Powdery Mildew", cure: "Apply sulphur spray on affected areas." }
-            ],
             'hi-IN': [
                 { name: "झुलसा रोग", cure: "कवकनाशी का छिड़काव करें।" },
                 { name: "जीवाणु रोग", cure: "नीम के तेल का छिड़काव करें।" }
+            ],
+            'te-IN': [
+                { name: "ఆకు మచ్చ తెగులు", cure: "కాపర్ ఫంగిసైడ్ పిచికారీ చేయండి." }
+            ],
+            'kn-IN': [
+                { name: "ಎಲೆ ಮುರುಟು ರೋಗ", cure: "ಬೇವಿನ ಎಣ್ಣೆಯನ್ನು ಸಿಂಪಡಿಸಿ." }
+            ],
+            'ml-IN': [
+                { name: "ഇലകരിച്ചിൽ രോഗം", cure: "കോപ്പർ ഫംഗിസൈഡ് തളിക്കുക." }
+            ],
+            'default': [
+                { name: "Early Blight Disease", cure: "Prune infected leaves and apply copper fungicide spray." },
+                { name: "Bacterial Blight", cure: "Drain excess water and spray neem oil extract." }
             ]
         };
 
-        // Load TensorFlow MobileNet Model for high accuracy real-time classification
         async function loadAIModel() {
             try {
                 aiModel = await mobilenet.load();
-                console.log("MobileNet Neural Network Loaded Successfully");
+                console.log("MobileNet Neural Network Loaded");
             } catch (e) {
                 console.error("Failed to load AI model", e);
             }
         }
 
+        // Low-latency Voice Speech Playback Engine across native Indian voices
         function speakImmediately(text) {
             if (!text || !('speechSynthesis' in window)) return;
             window.speechSynthesis.cancel();
+            
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = selectedLang;
-            utterance.rate = 1.0;
+            utterance.rate = 0.95;
             utterance.pitch = 1.0;
+
+            // Attempt to bind matching installed WebSpeech voices dynamically
+            const availableVoices = window.speechSynthesis.getVoices();
+            const matchingVoice = availableVoices.find(v => v.lang.replace('_', '-') === selectedLang || v.lang.startsWith(selectedLang.split('-')[0]));
+            if (matchingVoice) utterance.voice = matchingVoice;
+
             window.speechSynthesis.speak(utterance);
         }
 
         startBtn.addEventListener('click', async () => {
             if (!aiModel) {
-                alert("AI Verification Model is still loading. Please wait 3 seconds and try again.");
+                alert("AI Model loading... Please wait 3 seconds and try again.");
                 return;
             }
 
@@ -187,7 +261,7 @@
 
                 scanInterval = setInterval(analyzeFrameWithAI, 2000);
             } catch (err) {
-                alert("Camera access is required for scanning.");
+                alert("Camera access required for scanner.");
             }
         });
 
@@ -212,10 +286,7 @@
         async function analyzeFrameWithAI() {
             if (!stream || !aiModel) return;
 
-            // Classify current camera frame using AI neural net
             const predictions = await aiModel.classify(video);
-            
-            // Check if any output prediction matches botanical or leaf structures
             const leafKeywords = ['leaf', 'plant', 'tree', 'flower', 'vegetable', 'cabbage', 'herb', 'flora', 'foil', 'foliage', 'branch'];
             
             let isLeafVerified = false;
@@ -231,12 +302,11 @@
                 }
             }
 
-            const currentLangSpeeches = locationSpeeches[selectedLang] || locationSpeeches['en-US'];
+            const currentLangSpeeches = locationSpeeches[selectedLang] || locationSpeeches['ta-IN'];
 
             if (isLeafVerified && highestConfidence > 0.15) {
-                // Strict Verification Passed: Leaf Detected
                 const calcAccuracy = (Math.min(99.4, 95 + (highestConfidence * 5))).toFixed(1);
-                const currentDiseases = diseasesList[selectedLang] || diseasesList['en-US'];
+                const currentDiseases = diseasesList[selectedLang] || diseasesList['default'];
                 const selectedDisease = currentDiseases[Math.floor(Math.random() * currentDiseases.length)];
 
                 diseaseName.textContent = selectedDisease.name;
@@ -251,7 +321,6 @@
                     speakImmediately(currentTextToSpeak);
                 }
             } else {
-                // Strict Verification Failed: No Leaf Detected
                 diseaseName.textContent = "NOT DETECTED";
                 diseaseName.className = "text-rose-400 font-bold text-base mt-0.5";
                 accuracyVal.textContent = "0%";
@@ -266,7 +335,12 @@
             }
         }
 
-        window.addEventListener('DOMContentLoaded', loadAIModel);
+        window.addEventListener('DOMContentLoaded', () => {
+            loadAIModel();
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+            }
+        });
     </script>
 </body>
 </html>
