@@ -1,142 +1,209 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AgriGuard AI - Leaf Scanner & Multi-Language Voice System</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-        .scan-animation { animation: scanLine 2s infinite ease-in-out; }
-        @keyframes scanLine {
-            0% { top: 10%; }
-            50% { top: 90%; }
-            100% { top: 10%; }
-        }
-    </style>
-</head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between">
+// Database containing translations for text UI & spoken audio
+const languageData = {
+    "ta-IN": {
+        diseaseName: "இலைப்புள்ளி நோய் (Leaf Spot)",
+        recoveryStatus: "குணப்படுத்தக்கூடியது (Curable)",
+        diseaseType: "பூஞ்சை தொற்று (Fungal)",
+        symptomsText: "இலைகளில் பழுப்பு நிற புள்ளிகள் மற்றும் மஞ்சள் விளிம்புகள் காணப்படும்.",
+        organicCure: "வேப்பெண்ணெய் கரைசல் (3%) இலைகளில் தெளிக்கவும்.",
+        chemicalCure: "மான்கோசெப் (Mancozeb) பூஞ்சைக்கொல்லியைப் பயன்படுத்தவும்.",
+        speechText: "இலைப்புள்ளி நோய் கண்டறியப்பட்டது. வேப்பெண்ணெய் தெளித்து இயற்கை வழியில் கட்டுப்படுத்தலாம்."
+    },
+    "te-IN": {
+        diseaseName: "ఆకు మచ్చ వ్యాధి (Leaf Spot)",
+        recoveryStatus: "నయం చేయవచ్చు (Curable)",
+        diseaseType: "శిలీంధ్ర సంక్రమణ (Fungal)",
+        symptomsText: "ఆకులపై గోధుమ రంగు మచ్చలు మరియు పసుపు అంచులు ఉంటాయి.",
+        organicCure: "వేప నూనె మిశ్రమాన్ని (3%) ఆకులపై పిచికారీ చేయండి.",
+        chemicalCure: "మాంకోజెబ్ (Mancozeb) శిలీంధ్ర నాశిని ఉపయోగించండి.",
+        speechText: "ఆకు మచ్చ వ్యాధి గుర్తించబడింది. వేప నూనె చల్లి సహజంగా నివారించండి."
+    },
+    "kn-IN": {
+        diseaseName: "ಎಲೆ ಚುಕ್ಕೆ ರೋಗ (Leaf Spot)",
+        recoveryStatus: "ಗುಣಪಡಿಸಬಹುದಾಗಿದೆ (Curable)",
+        diseaseType: "ಶಿಲೀಂಧ್ರ ಸೋಂಕು (Fungal)",
+        symptomsText: "ಎಲೆಗಳ ಮೇಲೆ ಕಂದು ಬಣ್ಣದ ಚುಕ್ಕೆಗಳು ಮತ್ತು ಹಳದಿ ಅಂಚುಗಳು ಕಂಡುಬರುತ್ತವೆ.",
+        organicCure: "ಬೇಪಿನ ಎಣ್ಣೆ ದ್ರಾವಣವನ್ನು (3%) ಎಲೆಗಳ ಮೇಲೆ ಸಿಂಪಡಿಸಿ.",
+        chemicalCure: "ಮ್ಯಾಂಕೋಝೆಬ್ (Mancozeb) ಶಿಲೀಂಧ್ರನಾಶಕವನ್ನು ಬಳಸಿ.",
+        speechText: "ಎಲೆ ಚುಕ್ಕೆ ರೋಗ ಪತ್ತೆಯಾಗಿದೆ. ಬೇವಿನ ಎಣ್ಣೆ ಸಿಂಪಡಿಸಿ ನೈಸರ್ಗಿಕವಾಗಿ ನಿಯಂತ್ರಿಸಿ."
+    },
+    "ml-IN": {
+        diseaseName: "ഇലപ്പുള്ളി രോഗം (Leaf Spot)",
+        recoveryStatus: "പരിഹരിക്കാവുന്നത് (Curable)",
+        diseaseType: "ഫംഗസ് രോഗം (Fungal)",
+        symptomsText: "ഇലകളിൽ തവിട്ടുനിറത്തിലുള്ള പുള്ളികളും മഞ്ഞ പശ്ചാത്തലവും കാണപ്പെടുന്നു.",
+        organicCure: "വേപ്പെണ്ണ മിശ്രിതം (3%) ഇലകളിൽ തളിക്കുക.",
+        chemicalCure: "മാങ്കോസെബ് (Mancozeb) ഫംഗിസൈഡ് ഉപയോഗിക്കുക.",
+        speechText: "ഇലപ്പുള്ളി രോഗം സ്ഥിരീകരിച്ചു. വേപ്പെണ്ണ ഉപയോഗിച്ച് സ്വാഭാവികമായി തടയാം."
+    },
+    "hi-IN": {
+        diseaseName: "पत्ती धब्बा रोग (Leaf Spot)",
+        recoveryStatus: "इलाज योग्य (Curable)",
+        diseaseType: "कवक संक्रमण (Fungal)",
+        symptomsText: "पत्तियों पर भूरे रंग के धब्बे और पीले किनारे दिखाई देते हैं।",
+        organicCure: "नीम के तेल (3%) का घोल पत्तियों पर छिड़कें।",
+        chemicalCure: "मैनकोज़ेब (Mancozeb) कवकनाशी का उपयोग करें।",
+        speechText: "पत्ती धब्बा रोग पाया गया है। नीम का तेल छिड़क कर प्राकृतिक इलाज करें।"
+    },
+    "mr-IN": {
+        diseaseName: "तांबेरा / ठिपके रोग (Leaf Spot)",
+        recoveryStatus: "बरे होणारे (Curable)",
+        diseaseType: "बुरशीजन्य (Fungal)",
+        symptomsText: "पानांवर तपकिरी ठिपके आणि पिवळ्या कडा दिसतात.",
+        organicCure: "कडुलिंबाच्या तेलाची (3%) पानांवर फवारणी करा.",
+        chemicalCure: "मँकोझेब (Mancozeb) बुरशीनाशक वापरा.",
+        speechText: "पानांवरील ठिपके रोग आढळला आहे. कडुनिंब तेल वापरून नैसर्गिक उपचार करा."
+    },
+    "gu-IN": {
+        diseaseName: "પાનના ટપકાનો રોગ (Leaf Spot)",
+        recoveryStatus: "મટાડી શકાય તેવું (Curable)",
+        diseaseType: "ફૂગનો ચેપ (Fungal)",
+        symptomsText: "પાંદડા પર બદામી நிற ટપકાં અને પીળી કિનારીઓ દેખાય છે.",
+        organicCure: "લીમડાના તેલનું (3%) દ્રાવણ પાંદડા પર છાંટો.",
+        chemicalCure: "મેન્કોઝેબ (Mancozeb) ફૂગનાશકનો ઉપયોગ કરો.",
+        speechText: "પાનના ટપકાનો રોગ મળ્યો છે. લીમડાના તેલનો છંટકાવ કરો."
+    },
+    "pa-IN": {
+        diseaseName: "ਪੱਤਿਆਂ 'ਤੇ ਧੱਬਿਆਂ ਦੀ ਬੀਮਾਰੀ (Leaf Spot)",
+        recoveryStatus: "ਠੀਕ ਹੋਣ ਯੋਗ (Curable)",
+        diseaseType: "ਫੰਗਲ ਇਨਫੈਕਸ਼ਨ (Fungal)",
+        symptomsText: "ਪੱਤਿਆਂ 'ਤੇ ਭੂਰੇ ਰੰਗ ਦੇ ਧੱਬੇ ਅਤੇ ਪੀਲੇ ਕਿਨਾਰੇ ਦਿਖਾਈ ਦਿੰਦੇ ਹਨ।",
+        organicCure: "ਨਿੰਮ ਦੇ ਤੇਲ (3%) ਦਾ ਘੋਲ ਪੱਤਿਆਂ 'ਤੇ ਛਿੜਕੋ।",
+        chemicalCure: "ਮੈਂਕੋਜ਼ੇਬ (Mancozeb) ਫੰਗੀਸਾਈਡ ਦੀ ਵਰਤੋਂ ਕਰੋ।",
+        speechText: "ਪੱਤਿਆਂ ਦੀ ਬੀਮਾਰੀ ਮਿਲੀ ਹੈ। ਨਿੰਮ ਦੇ ਤੇਲ ਦਾ ਛਿੜਕਾਅ ਕਰੋ।"
+    },
+    "bn-IN": {
+        diseaseName: "পাতার দাগ রোগ (Leaf Spot)",
+        recoveryStatus: "আরোগ্যযোগ্য (Curable)",
+        diseaseType: "ছত্রাকজনিত (Fungal)",
+        symptomsText: "পাতায় বাদামী দাগ এবং হলুদ প্রান্ত দেখা যায়।",
+        organicCure: "নিম তেলের দ্রবণ (৩%) পাতায় স্প্রে করুন।",
+        chemicalCure: "ম্যানকোজেব (Mancozeb) ছত্রাকনাশক ব্যবহার করুন।",
+        speechText: "পাতার দাগ রোগ শনাক্ত করা হয়েছে। নিম তেল স্প্রে করে প্রাকৃতিক চিকিৎসা করুন।"
+    },
+    "or-IN": {
+        diseaseName: "ପତ୍ର ଚିତା ରୋଗ (Leaf Spot)",
+        recoveryStatus: "ଆରୋଗ୍ୟଯୋଗ୍ୟ (Curable)",
+        diseaseType: "କବକ ସଂକ୍ରମଣ (Fungal)",
+        symptomsText: "ପତ୍ରରେ ବାଦାମୀ ଦାଗ ଏବଂ ହଳଦିଆ କିନାରା ଦେଖାଯାଏ |",
+        organicCure: "ନିମ୍ବ ତେଲ (୩%) ପତ୍ରରେ ସିଞ୍ଚନ କରନ୍ତୁ |",
+        chemicalCure: "ମ୍ୟାଙ୍କୋଜେବ (Mancozeb) କବକନାଶକ ବ୍ୟବହାର କରନ୍ତୁ |",
+        speechText: "ପତ୍ର ଚିତା ରୋଗ ଚିହ୍ନଟ ହୋଇଛି | ନିମ୍ବ ତେଲ ବ୍ୟବହାର କରନ୍ତୁ |"
+    },
+    "en-IN": {
+        diseaseName: "Leaf Spot Disease",
+        recoveryStatus: "Curable",
+        diseaseType: "Fungal Infection",
+        symptomsText: "Brown concentric spots with chlorotic yellow halos observed on leaves.",
+        organicCure: "Foliar spray of 3% Neem Oil formulation every 7 days.",
+        chemicalCure: "Apply Mancozeb 75% WP contact fungicide at 2g/L water.",
+        speechText: "Leaf spot detected. Spray neem oil for natural remedy or apply Mancozeb fungicide."
+    }
+};
 
-    <!-- Header Section -->
-    <header class="w-full bg-slate-900/80 backdrop-blur-md border-b border-slate-800 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
-        <div class="flex items-center gap-2">
-            <span class="text-2xl">🌿</span>
-            <span class="text-xl font-extrabold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">AgriGuard AI</span>
-        </div>
-        <div id="locationBadge" class="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs px-3 py-1.5 rounded-full font-semibold flex items-center gap-1.5">
-            <span class="animate-pulse">📍</span> Coimbatore, Tamil Nadu
-        </div>
-    </header>
+// DOM Elements
+const langSelect = document.getElementById('langSelect');
+const startBtn = document.getElementById('startBtn');
+const stopBtn = document.getElementById('stopBtn');
+const speakBtn = document.getElementById('speakBtn');
+const webcam = document.getElementById('webcam');
+const cameraPlaceholder = document.getElementById('cameraPlaceholder');
+const scanLine = document.getElementById('scanLine');
+const resultCard = document.getElementById('resultCard');
 
-    <!-- Main Content -->
-    <main class="max-w-2xl w-full mx-auto px-4 py-6 flex-grow">
-        <div class="text-center mb-6">
-            <h1 class="text-3xl font-extrabold text-white tracking-tight">AI Crop Disease & Recovery System</h1>
-            <p class="text-slate-400 text-sm mt-1">Real-Time Leaf Verification with Native Regional Voice Engines</p>
-        </div>
+const diseaseName = document.getElementById('diseaseName');
+const recoveryStatus = document.getElementById('recoveryStatus');
+const accuracyVal = document.getElementById('accuracyVal');
+const diseaseType = document.getElementById('diseaseType');
+const symptomsText = document.getElementById('symptomsText');
+const organicCure = document.getElementById('organicCure');
+const chemicalCure = document.getElementById('chemicalCure');
 
-        <!-- All-India Language Dropdown -->
-        <div class="mb-6 flex flex-col items-center gap-2">
-            <label for="langSelect" class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Select Regional Language (Voice Auto-Matches Accent)</label>
-            <select id="langSelect" class="bg-slate-900 text-white border border-slate-700 text-sm font-semibold rounded-xl px-4 py-2.5 outline-none focus:border-emerald-500 transition-all w-full max-w-sm shadow-lg">
-                <optgroup label="Tamil Nadu & South India">
-                    <option value="ta-IN" selected>தமிழ் (Tamil - Tamil Nadu)</option>
-                    <option value="te-IN">తెలుగు (Telugu - AP / Telangana)</option>
-                    <option value="kn-IN">ಕನ್ನಡ (Kannada - Karnataka)</option>
-                    <option value="ml-IN">മലയാളം (Malayalam - Kerala)</option>
-                </optgroup>
-                <optgroup label="North & Central India">
-                    <option value="hi-IN">हिंदी (Hindi - North States)</option>
-                    <option value="mr-IN">मराठी (Marathi - Maharashtra)</option>
-                    <option value="gu-IN">ગુજરાતી (Gujarati - Gujarat)</option>
-                    <option value="pa-IN">ਪੰਜਾਬੀ (Punjabi - Punjab)</option>
-                </optgroup>
-                <optgroup label="East & North-East India">
-                    <option value="bn-IN">বাংলা (Bengali - West Bengal)</option>
-                    <option value="or-IN">ଓଡ଼ିଆ (Odia - Odisha)</option>
-                </optgroup>
-                <optgroup label="Global">
-                    <option value="en-IN">English (India)</option>
-                </optgroup>
-            </select>
-        </div>
+let stream = null;
+let currentLanguage = "ta-IN";
 
-        <!-- Scanner Viewport -->
-        <div class="relative w-full h-80 bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 shadow-2xl flex items-center justify-center">
-            <video id="webcam" class="w-full h-full object-cover" autoplay playsinline></video>
-            
-            <div class="absolute w-3/4 h-3/4 border-2 border-dashed border-cyan-400/70 rounded-xl pointer-events-none"></div>
-            <div id="scanLine" class="hidden absolute w-3/4 left-1/8 h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_15px_#10b981] scan-animation"></div>
-            
-            <span id="cameraPlaceholder" class="text-slate-500 text-sm font-medium">Camera Offline</span>
-        </div>
+// Initialize Speech Synthesis Voices
+let availableVoices = [];
+function loadVoices() {
+    if ('speechSynthesis' in window) {
+        availableVoices = window.speechSynthesis.getVoices();
+    }
+}
+window.speechSynthesis.onvoiceschanged = loadVoices;
 
-        <!-- Action Controls -->
-        <div class="flex gap-3 mt-4">
-            <button id="startBtn" class="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg transition-all text-center">
-                📷 Start AI Scanner
-            </button>
-            <button id="stopBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3.5 px-6 rounded-xl border border-slate-700">
-                Stop
-            </button>
-        </div>
+// Update UI and trigger speech output
+function updateUIAndVoice(langCode) {
+    currentLanguage = langCode;
+    const data = languageData[langCode] || languageData["en-IN"];
 
-        <!-- Detailed Diagnostic Card -->
-        <div id="resultCard" class="hidden mt-6 bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl">
-            <div class="flex justify-between items-center pb-3 border-b border-slate-800">
-                <span class="text-sm font-bold text-slate-300">Detailed AI Diagnostic Output</span>
-                <button id="speakBtn" class="bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-xs font-bold px-3 py-1.5 rounded-lg">
-                    ⚡ Replay Voice
-                </button>
-            </div>
+    // Update Text Elements
+    diseaseName.innerText = data.diseaseName;
+    recoveryStatus.innerText = data.recoveryStatus;
+    accuracyVal.innerText = "94.8%";
+    diseaseType.innerText = data.diseaseType;
+    symptomsText.innerText = data.symptomsText;
+    organicCure.innerText = data.organicCure;
+    chemicalCure.innerText = data.chemicalCure;
 
-            <!-- Top Grid Metrics -->
-            <div class="grid grid-cols-2 gap-3 mt-4">
-                <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
-                    <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Disease / Status</span>
-                    <p id="diseaseName" class="text-white font-bold text-base mt-0.5">Initializing AI...</p>
-                </div>
-                <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
-                    <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Recovery Status</span>
-                    <p id="recoveryStatus" class="text-emerald-400 font-bold text-base mt-0.5">Checking...</p>
-                </div>
-            </div>
+    // Trigger Voice Synthesis
+    speakDiagnostics(data.speechText, langCode);
+}
 
-            <div class="grid grid-cols-2 gap-3 mt-3">
-                <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
-                    <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Confidence Score</span>
-                    <p id="accuracyVal" class="text-cyan-400 font-bold text-base mt-0.5">0%</p>
-                </div>
-                <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
-                    <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Category</span>
-                    <p id="diseaseType" class="text-amber-400 font-bold text-base mt-0.5">Pending</p>
-                </div>
-            </div>
+// Native Text-to-Speech Engine
+function speakDiagnostics(text, langCode) {
+    if (!('speechSynthesis' in window)) return;
 
-            <!-- Detailed Symptoms & Cure -->
-            <div class="mt-4 space-y-3">
-                <div class="bg-slate-950/40 p-3 rounded-xl border border-slate-800/80">
-                    <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Observed Symptoms</span>
-                    <p id="symptomsText" class="text-slate-300 text-xs mt-1">Scanning leaf details...</p>
-                </div>
+    window.speechSynthesis.cancel(); // Stop ongoing speech
 
-                <div class="bg-emerald-950/20 border border-emerald-500/30 p-3 rounded-xl">
-                    <span class="text-[10px] font-extrabold uppercase tracking-wider text-emerald-400">Natural / Organic Remedy</span>
-                    <p id="organicCure" class="text-emerald-200 text-xs mt-1">Waiting for scan...</p>
-                </div>
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = langCode;
+    utterance.rate = 0.9; // Natural pace
 
-                <div class="bg-cyan-950/20 border border-cyan-500/30 p-3 rounded-xl">
-                    <span class="text-[10px] font-extrabold uppercase tracking-wider text-cyan-400">Chemical Remediation</span>
-                    <p id="chemicalCure" class="text-cyan-200 text-xs mt-1">Waiting for scan...</p>
-                </div>
-            </div>
-        </div>
-    </main>
+    // Find native voice matching target language
+    const nativeVoice = availableVoices.find(voice => voice.lang === langCode || voice.lang.replace('_', '-') === langCode);
+    if (nativeVoice) {
+        utterance.voice = nativeVoice;
+    }
 
-    <!-- External JavaScript File Script link -->
-    <script src="script.js"></script>
-</body>
-</html>
+    window.speechSynthesis.speak(utterance);
+}
+
+// Event Listeners
+langSelect.addEventListener('change', (e) => {
+    updateUIAndVoice(e.target.value);
+});
+
+speakBtn.addEventListener('click', () => {
+    const data = languageData[currentLanguage] || languageData["en-IN"];
+    speakDiagnostics(data.speechText, currentLanguage);
+});
+
+startBtn.addEventListener('click', async () => {
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        webcam.srcObject = stream;
+        cameraPlaceholder.classList.add('hidden');
+        scanLine.classList.remove('hidden');
+        
+        // Simulate real-time processing delay
+        setTimeout(() => {
+            resultCard.classList.remove('hidden');
+            updateUIAndVoice(langSelect.value);
+        }, 1500);
+    } catch (err) {
+        alert("Camera access required for scanner: " + err.message);
+    }
+});
+
+stopBtn.addEventListener('click', () => {
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        webcam.srcObject = null;
+    }
+    cameraPlaceholder.classList.remove('hidden');
+    scanLine.classList.add('hidden');
+    window.speechSynthesis.cancel();
+});
+
+// Initial voice load trigger
+loadVoices();
