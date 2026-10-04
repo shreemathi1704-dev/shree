@@ -1,107 +1,300 @@
-// Database containing translations for text UI & spoken audio
-const languageData = {
-    "ta-IN": {
-        diseaseName: "இலைப்புள்ளி நோய் (Leaf Spot)",
-        recoveryStatus: "குணப்படுத்தக்கூடியது (Curable)",
-        diseaseType: "பூஞ்சை தொற்று (Fungal)",
-        symptomsText: "இலைகளில் பழுப்பு நிற புள்ளிகள் மற்றும் மஞ்சள் விளிம்புகள் காணப்படும்.",
-        organicCure: "வேப்பெண்ணெய் கரைசல் (3%) இலைகளில் தெளிக்கவும்.",
-        chemicalCure: "மான்கோசெப் (Mancozeb) பூஞ்சைக்கொல்லியைப் பயன்படுத்தவும்.",
-        speechText: "இலைப்புள்ளி நோய் கண்டறியப்பட்டது. வேப்பெண்ணெய் தெளித்து இயற்கை வழியில் கட்டுப்படுத்தலாம்."
-    },
-    "te-IN": {
-        diseaseName: "ఆకు మచ్చ వ్యాధి (Leaf Spot)",
-        recoveryStatus: "నయం చేయవచ్చు (Curable)",
-        diseaseType: "శిలీంధ్ర సంక్రమణ (Fungal)",
-        symptomsText: "ఆకులపై గోధుమ రంగు మచ్చలు మరియు పసుపు అంచులు ఉంటాయి.",
-        organicCure: "వేప నూనె మిశ్రమాన్ని (3%) ఆకులపై పిచికారీ చేయండి.",
-        chemicalCure: "మాంకోజెబ్ (Mancozeb) శిలీంధ్ర నాశిని ఉపయోగించండి.",
-        speechText: "ఆకు మచ్చ వ్యాధి గుర్తించబడింది. వేప నూనె చల్లి సహజంగా నివారించండి."
-    },
-    "kn-IN": {
-        diseaseName: "ಎಲೆ ಚುಕ್ಕೆ ರೋಗ (Leaf Spot)",
-        recoveryStatus: "ಗುಣಪಡಿಸಬಹುದಾಗಿದೆ (Curable)",
-        diseaseType: "ಶಿಲೀಂಧ್ರ ಸೋಂಕು (Fungal)",
-        symptomsText: "ಎಲೆಗಳ ಮೇಲೆ ಕಂದು ಬಣ್ಣದ ಚುಕ್ಕೆಗಳು ಮತ್ತು ಹಳದಿ ಅಂಚುಗಳು ಕಂಡುಬರುತ್ತವೆ.",
-        organicCure: "ಬೇಪಿನ ಎಣ್ಣೆ ದ್ರಾವಣವನ್ನು (3%) ಎಲೆಗಳ ಮೇಲೆ ಸಿಂಪಡಿಸಿ.",
-        chemicalCure: "ಮ್ಯಾಂಕೋಝೆಬ್ (Mancozeb) ಶಿಲೀಂಧ್ರನಾಶಕವನ್ನು ಬಳಸಿ.",
-        speechText: "ಎಲೆ ಚುಕ್ಕೆ ರೋಗ ಪತ್ತೆಯಾಗಿದೆ. ಬೇವಿನ ಎಣ್ಣೆ ಸಿಂಪಡಿಸಿ ನೈಸರ್ಗಿಕವಾಗಿ ನಿಯಂತ್ರಿಸಿ."
-    },
-    "ml-IN": {
-        diseaseName: "ഇലപ്പുള്ളി രോഗം (Leaf Spot)",
-        recoveryStatus: "പരിഹരിക്കാവുന്നത് (Curable)",
-        diseaseType: "ഫംഗസ് രോഗം (Fungal)",
-        symptomsText: "ഇലകളിൽ തവിട്ടുനിറത്തിലുള്ള പുള്ളികളും മഞ്ഞ പശ്ചാത്തലവും കാണപ്പെടുന്നു.",
-        organicCure: "വേപ്പെണ്ണ മിശ്രിതം (3%) ഇലകളിൽ തളിക്കുക.",
-        chemicalCure: "മാങ്കോസെബ് (Mancozeb) ഫംഗിസൈഡ് ഉപയോഗിക്കുക.",
-        speechText: "ഇലപ്പുള്ളി രോഗം സ്ഥിരീകരിച്ചു. വേപ്പെണ്ണ ഉപയോഗിച്ച് സ്വാഭാവികമായി തടയാം."
-    },
-    "hi-IN": {
-        diseaseName: "पत्ती धब्बा रोग (Leaf Spot)",
-        recoveryStatus: "इलाज योग्य (Curable)",
-        diseaseType: "कवक संक्रमण (Fungal)",
-        symptomsText: "पत्तियों पर भूरे रंग के धब्बे और पीले किनारे दिखाई देते हैं।",
-        organicCure: "नीम के तेल (3%) का घोल पत्तियों पर छिड़कें।",
-        chemicalCure: "मैनकोज़ेब (Mancozeb) कवकनाशी का उपयोग करें।",
-        speechText: "पत्ती धब्बा रोग पाया गया है। नीम का तेल छिड़क कर प्राकृतिक इलाज करें।"
-    },
-    "mr-IN": {
-        diseaseName: "तांबेरा / ठिपके रोग (Leaf Spot)",
-        recoveryStatus: "बरे होणारे (Curable)",
-        diseaseType: "बुरशीजन्य (Fungal)",
-        symptomsText: "पानांवर तपकिरी ठिपके आणि पिवळ्या कडा दिसतात.",
-        organicCure: "कडुलिंबाच्या तेलाची (3%) पानांवर फवारणी करा.",
-        chemicalCure: "मँकोझेब (Mancozeb) बुरशीनाशक वापरा.",
-        speechText: "पानांवरील ठिपके रोग आढळला आहे. कडुनिंब तेल वापरून नैसर्गिक उपचार करा."
-    },
-    "gu-IN": {
-        diseaseName: "પાનના ટપકાનો રોગ (Leaf Spot)",
-        recoveryStatus: "મટાડી શકાય તેવું (Curable)",
-        diseaseType: "ફૂગનો ચેપ (Fungal)",
-        symptomsText: "પાંદડા પર બદામી நிற ટપકાં અને પીળી કિનારીઓ દેખાય છે.",
-        organicCure: "લીમડાના તેલનું (3%) દ્રાવણ પાંદડા પર છાંટો.",
-        chemicalCure: "મેન્કોઝેબ (Mancozeb) ફૂગનાશકનો ઉપયોગ કરો.",
-        speechText: "પાનના ટપકાનો રોગ મળ્યો છે. લીમડાના તેલનો છંટકાવ કરો."
-    },
-    "pa-IN": {
-        diseaseName: "ਪੱਤਿਆਂ 'ਤੇ ਧੱਬਿਆਂ ਦੀ ਬੀਮਾਰੀ (Leaf Spot)",
-        recoveryStatus: "ਠੀਕ ਹੋਣ ਯੋਗ (Curable)",
-        diseaseType: "ਫੰਗਲ ਇਨਫੈਕਸ਼ਨ (Fungal)",
-        symptomsText: "ਪੱਤਿਆਂ 'ਤੇ ਭੂਰੇ ਰੰਗ ਦੇ ਧੱਬੇ ਅਤੇ ਪੀਲੇ ਕਿਨਾਰੇ ਦਿਖਾਈ ਦਿੰਦੇ ਹਨ।",
-        organicCure: "ਨਿੰਮ ਦੇ ਤੇਲ (3%) ਦਾ ਘੋਲ ਪੱਤਿਆਂ 'ਤੇ ਛਿੜਕੋ।",
-        chemicalCure: "ਮੈਂਕੋਜ਼ੇਬ (Mancozeb) ਫੰਗੀਸਾਈਡ ਦੀ ਵਰਤੋਂ ਕਰੋ।",
-        speechText: "ਪੱਤਿਆਂ ਦੀ ਬੀਮਾਰੀ ਮਿਲੀ ਹੈ। ਨਿੰਮ ਦੇ ਤੇਲ ਦਾ ਛਿੜਕਾਅ ਕਰੋ।"
-    },
-    "bn-IN": {
-        diseaseName: "পাতার দাগ রোগ (Leaf Spot)",
-        recoveryStatus: "আরোগ্যযোগ্য (Curable)",
-        diseaseType: "ছত্রাকজনিত (Fungal)",
-        symptomsText: "পাতায় বাদামী দাগ এবং হলুদ প্রান্ত দেখা যায়।",
-        organicCure: "নিম তেলের দ্রবণ (৩%) পাতায় স্প্রে করুন।",
-        chemicalCure: "ম্যানকোজেব (Mancozeb) ছত্রাকনাশক ব্যবহার করুন।",
-        speechText: "পাতার দাগ রোগ শনাক্ত করা হয়েছে। নিম তেল স্প্রে করে প্রাকৃতিক চিকিৎসা করুন।"
-    },
-    "or-IN": {
-        diseaseName: "ପତ୍ର ଚିତା ରୋଗ (Leaf Spot)",
-        recoveryStatus: "ଆରୋଗ୍ୟଯୋଗ୍ୟ (Curable)",
-        diseaseType: "କବକ ସଂକ୍ରମଣ (Fungal)",
-        symptomsText: "ପତ୍ରରେ ବାଦାମୀ ଦାଗ ଏବଂ ହଳଦିଆ କିନାରା ଦେଖାଯାଏ |",
-        organicCure: "ନିମ୍ବ ତେଲ (୩%) ପତ୍ରରେ ସିଞ୍ଚନ କରନ୍ତୁ |",
-        chemicalCure: "ମ୍ୟାଙ୍କୋଜେବ (Mancozeb) କବକନାଶକ ବ୍ୟବହାର କରନ୍ତୁ |",
-        speechText: "ପତ୍ର ଚିତା ରୋଗ ଚିହ୍ନଟ ହୋଇଛି | ନିମ୍ବ ତେଲ ବ୍ୟବହାର କରନ୍ତୁ |"
-    },
-    "en-IN": {
-        diseaseName: "Leaf Spot Disease",
-        recoveryStatus: "Curable",
-        diseaseType: "Fungal Infection",
-        symptomsText: "Brown concentric spots with chlorotic yellow halos observed on leaves.",
-        organicCure: "Foliar spray of 3% Neem Oil formulation every 7 days.",
-        chemicalCure: "Apply Mancozeb 75% WP contact fungicide at 2g/L water.",
-        speechText: "Leaf spot detected. Spray neem oil for natural remedy or apply Mancozeb fungicide."
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plant Disease Scanner</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
+
+    body {
+      background-color: #f0f4f8;
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+      color: #333;
+    }
+
+    .container {
+      background: #ffffff;
+      padding: 24px;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+      width: 100%;
+      max-width: 520px;
+    }
+
+    h1 {
+      font-size: 1.4rem;
+      margin-bottom: 20px;
+      color: #1b4332;
+      text-align: center;
+    }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    select {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #d1d5db;
+      font-size: 1rem;
+      outline: none;
+      background-color: #fff;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+    }
+
+    button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    #startBtn { background-color: #2d6a4f; color: white; }
+    #startBtn:hover { background-color: #1b4332; }
+
+    #stopBtn { background-color: #e63946; color: white; }
+    #stopBtn:hover { background-color: #d62828; }
+
+    #speakBtn { background-color: #0284c7; color: white; }
+    #speakBtn:hover { background-color: #0369a1; }
+
+    .camera-container {
+      position: relative;
+      width: 100%;
+      height: 260px;
+      background-color: #111827;
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .camera-placeholder {
+      color: #9ca3af;
+      font-size: 0.95rem;
+    }
+
+    .scan-line {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: #4ade80;
+      box-shadow: 0 0 12px #4ade80;
+      animation: scan 2s linear infinite;
+    }
+
+    @keyframes scan {
+      0% { top: 0; }
+      50% { top: 100%; }
+      100% { top: 0; }
+    }
+
+    .hidden { display: none !important; }
+
+    .result-card {
+      background-color: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-left: 6px solid #22c55e;
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    .result-card h2 {
+      font-size: 1.2rem;
+      color: #15803d;
+      margin-bottom: 12px;
+    }
+
+    .info-row {
+      margin-bottom: 8px;
+      font-size: 0.95rem;
+      line-height: 1.4;
+    }
+
+    .info-row strong {
+      color: #166534;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>பயிர் நோய் கண்டறிதல் scanner</h1>
+
+  <div class="controls">
+    <select id="langSelect">
+      <option value="ta-IN">தமிழ் (Tamil)</option>
+      <option value="te-IN">తెలుగు (Telugu)</option>
+      <option value="kn-IN">ಕನ್ನಡ (Kannada)</option>
+      <option value="ml-IN">മലയാളം (Malayalam)</option>
+      <option value="hi-IN">हिन्दी (Hindi)</option>
+      <option value="mr-IN">मराठी (Marathi)</option>
+      <option value="gu-IN">ગુજરાતી (Gujarati)</option>
+      <option value="pa-IN">ਪੰਜਾਬੀ (Punjabi)</option>
+      <option value="bn-IN">বাংলা (Bengali)</option>
+      <option value="or-IN">ଓଡ଼ିଆ (Odia)</option>
+      <option value="en-IN">English</option>
+    </select>
+
+    <div class="btn-group">
+      <button id="startBtn">ஸ்கேன் செய் (Start)</button>
+      <button id="stopBtn">நிறுத்து (Stop)</button>
+      <button id="speakBtn">🔊 பேசு (Speak)</button>
+    </div>
+  </div>
+
+  <div class="camera-container">
+    <div id="cameraPlaceholder" class="camera-placeholder">கேமரா ஆன் செய்யப்படவில்லை</div>
+    <video id="webcam" autoplay playsinline class="hidden"></video>
+    <div id="scanLine" class="scan-line hidden"></div>
+  </div>
+
+  <div id="resultCard" class="result-card hidden">
+    <h2 id="diseaseName">-</h2>
+    <div class="info-row"><strong>மீட்பு நிலை:</strong> <span id="recoveryStatus">-</span></div>
+    <div class="info-row"><strong>துல்லியம்:</strong> <span id="accuracyVal">-</span></div>
+    <div class="info-row"><strong>வகை:</strong> <span id="diseaseType">-</span></div>
+    <div class="info-row"><strong>அறிகுறிகள்:</strong> <span id="symptomsText">-</span></div>
+    <div class="info-row"><strong>இயற்கை சிகிச்சை:</strong> <span id="organicCure">-</span></div>
+    <div class="info-row"><strong>ரசாயன சிகிச்சை:</strong> <span id="chemicalCure">-</span></div>
+  </div>
+</div>
+
+<script>
+// Multilingual Database
+const languageData = {
+  "ta-IN": {
+    diseaseName: "இலைப்புள்ளி நோய் (Leaf Spot)",
+    recoveryStatus: "குணப்படுத்தக்கூடியது (Curable)",
+    diseaseType: "பூஞ்சை தொற்று (Fungal)",
+    symptomsText: "இலைகளில் பழுப்பு நிற புள்ளிகள் மற்றும் மஞ்சள் விளிம்புகள் காணப்படும்.",
+    organicCure: "வேப்பெண்ணெய் கரைசல் (3%) இலைகளில் தெளிக்கவும்.",
+    chemicalCure: "மான்கோசெப் (Mancozeb) பூஞ்சைக்கொல்லியைப் பயன்படுத்தவும்.",
+    speechText: "இலைப்புள்ளி நோய் கண்டறியப்பட்டது. வேப்பெண்ணெய் தெளித்து இயற்கை வழியில் கட்டுப்படுத்தலாம்."
+  },
+  "te-IN": {
+    diseaseName: "ఆకు మచ్చ వ్యాధి (Leaf Spot)",
+    recoveryStatus: "నయం చేయవచ్చు (Curable)",
+    diseaseType: "శిలీంధ్ర సంక్రమణ (Fungal)",
+    symptomsText: "ఆకులపై గోధుమ రంగు మచ్చలు మరియు పసుపు అంచులు ఉంటాయి.",
+    organicCure: "వేప నూనె మిశ్రమాన్ని (3%) ఆకులపై పిచికారీ చేయండి.",
+    chemicalCure: "మాంకోజెబ్ (Mancozeb) శిలీంధ్ర నాశిని ఉపయోగించండి.",
+    speechText: "ఆకు మచ్చ వ్యాధి గుర్తించబడింది. వేప నూనె చల్లి సహజంగా నివారించండి."
+  },
+  "kn-IN": {
+    diseaseName: "ಎಲೆ ಚುಕ್ಕೆ ರೋಗ (Leaf Spot)",
+    recoveryStatus: "ಗುಣಪಡಿಸಬಹುದಾಗಿದೆ (Curable)",
+    diseaseType: "ಶಿಲೀಂಧ್ರ ಸೋಂಕು (Fungal)",
+    symptomsText: "ಎಲೆಗಳ ಮೇಲೆ ಕಂದು ಬಣ್ಣದ ಚುಕ್ಕೆಗಳು ಮತ್ತು ಹಳದಿ ಅಂಚುಗಳು ಕಂಡುಬರುತ್ತವೆ.",
+    organicCure: "ಬೇಪಿನ ಎಣ್ಣೆ ದ್ರಾವಣವನ್ನು (3%) ಎಲೆಗಳ ಮೇಲೆ ಸಿಂಪಡಿಸಿ.",
+    chemicalCure: "ಮ್ಯಾಂಕೋಝೆಬ್ (Mancozeb) ಶಿಲೀಂಧ್ರನಾಶಕವನ್ನು ಬಳಸಿ.",
+    speechText: "ಎಲೆ ಚುಕ್ಕೆ ರೋಗ ಪತ್ತೆಯಾಗಿದೆ. ಬೇವಿನ ಎಣ್ಣೆ ಸಿಂಪಡಿಸಿ ನೈಸರ್ಗಿಕವಾಗಿ ನಿಯಂತ್ರಿಸಿ."
+  },
+  "ml-IN": {
+    diseaseName: "ഇലപ്പുള്ളി രോഗം (Leaf Spot)",
+    recoveryStatus: "പരിഹരിക്കാവുന്നത് (Curable)",
+    diseaseType: "ഫംഗസ് രോഗം (Fungal)",
+    symptomsText: "ഇലകളിൽ തവിട്ടുനിറത്തിലുള്ള പുള്ളികളും മഞ്ഞ പശ്ചാത്തലവും കാണപ്പെടുന്നു.",
+    organicCure: "വേപ്പെണ്ണ മിശ്രിതം (3%) ഇലകളിൽ തളിക്കുക.",
+    chemicalCure: "മാങ്കോസെബ് (Mancozeb) ഫംഗിസൈഡ് ഉപയോഗിക്കുക.",
+    speechText: "ഇലപ്പുള്ളി രോഗം സ്ഥിരീകരിച്ചു. വേപ്പെണ്ണ ഉപയോഗിച്ച് സ്വാഭാവികമായി തടയാം."
+  },
+  "hi-IN": {
+    diseaseName: "पत्ती धब्बा रोग (Leaf Spot)",
+    recoveryStatus: "इलाज योग्य (Curable)",
+    diseaseType: "कवक संक्रमण (Fungal)",
+    symptomsText: "पत्तियों पर भूरे रंग के धब्बे और पीले किनारे दिखाई देते हैं।",
+    organicCure: "नीम के तेल (3%) का घोल पत्तियों पर छिड़कें।",
+    chemicalCure: "मैनकोज़ेब (Mancozeb) कवकनाशी का उपयोग करें।",
+    speechText: "पत्ती धब्बा रोग पाया गया है। नीम का तेल छिड़क कर प्राकृतिक इलाज करें।"
+  },
+  "mr-IN": {
+    diseaseName: "तांबेरा / ठिपके रोग (Leaf Spot)",
+    recoveryStatus: "बरे होणारे (Curable)",
+    diseaseType: "बुरशीजन्य (Fungal)",
+    symptomsText: "पानांवर तपकिरी ठिपके आणि पिवळ्या कडा दिसतात.",
+    organicCure: "कडुलिंबाच्या तेलाची (3%) पानांवर फवारणी करा.",
+    chemicalCure: "मँकोझेब (Mancozeb) बुरशीनाशक वापरा.",
+    speechText: "पानांवरील ठिपके रोग आढळला आहे. कडुनिंब तेल वापरून नैसर्गिक उपचार करा."
+  },
+  "gu-IN": {
+    diseaseName: "પાનના ટપકાનો રોગ (Leaf Spot)",
+    recoveryStatus: "મટાડી શકાય તેવું (Curable)",
+    diseaseType: "ફૂગનો ચેપ (Fungal)",
+    symptomsText: "પાંદડા પર બદામી રંગના ટપકાં અને પીળી કિનારીઓ દેખાય છે.",
+    organicCure: "લીમડાના તેલનું (3%) દ્રાવણ પાંદડા પર છાંટો.",
+    chemicalCure: "મેન્કોઝેબ (Mancozeb) ફૂગનાશકનો ઉપયોગ કરો.",
+    speechText: "પાનના ટપકાનો રોગ મળ્યો છે. લીમડાના તેલનો છંટકાવ કરો."
+  },
+  "pa-IN": {
+    diseaseName: "ਪੱਤਿਆਂ 'ਤੇ ਧੱਬਿਆਂ ਦੀ ਬੀਮਾਰੀ (Leaf Spot)",
+    recoveryStatus: "ਠੀਕ ਹੋਣ ਯੋਗ (Curable)",
+    diseaseType: "ਫੰਗਲ ਇਨਫੈਕਸ਼ਨ (Fungal)",
+    symptomsText: "ਪੱਤਿਆਂ 'ਤੇ ਭੂਰੇ ਰੰਗ ਦੇ ਧੱਬੇ ਅਤੇ ਪੀਲੇ ਕਿਨਾਰੇ ਦਿਖਾਈ ਦਿੰਦੇ ਹਨ।",
+    organicCure: "ਨਿੰਮ ਦੇ ਤੇਲ (3%) ਦਾ ਘੋਲ ਪੱਤਿਆਂ 'ਤੇ ਛਿੜਕੋ।",
+    chemicalCure: "ਮੈਂਕੋਜ਼ੇਬ (Mancozeb) ਫੰਗੀਸਾਈਡ ਦੀ ਵਰਤੋਂ ਕਰੋ।",
+    speechText: "ਪੱਤਿਆਂ ਦੀ ਬੀਮਾਰੀ ਮਿਲੀ ਹੈ। ਨਿੰਮ ਦੇ ਤੇਲ ਦਾ ਛਿੜਕਾਅ ਕਰੋ।"
+  },
+  "bn-IN": {
+    diseaseName: "পাতার দাগ রোগ (Leaf Spot)",
+    recoveryStatus: "আরোগ্যযোগ্য (Curable)",
+    diseaseType: "ছত্রাকজনিত (Fungal)",
+    symptomsText: "পাতায় বাদামী দাগ এবং হলুদ প্রান্ত দেখা যায়।",
+    organicCure: "নিম তেলের দ্রবণ (৩%) পাতায় স্প্রে করুন।",
+    chemicalCure: "ম্যানকোজেব (Mancozeb) ছত্রাকনাশক ব্যবহার করুন।",
+    speechText: "পাতার দাগ রোগ শনাক্ত করা হয়েছে। নিম তেল স্প্রে করে প্রাকৃতিক চিকিৎসা করুন।"
+  },
+  "or-IN": {
+    diseaseName: "ପତ୍ର ଚିତା ରୋଗ (Leaf Spot)",
+    recoveryStatus: "ଆରୋଗ୍ୟଯୋଗ୍ୟ (Curable)",
+    diseaseType: "କବକ ସଂକ୍ରମଣ (Fungal)",
+    symptomsText: "ପତ୍ରରେ ବାଦାମୀ ଦାଗ ଏବଂ ହଳଦିଆ କିନାରା ଦେଖାଯାଏ |",
+    organicCure: "ନିମ୍ବ ତେଲ (୩%) ପତ୍ରରେ ସିଞ୍ଚନ କରନ୍ତୁ |",
+    chemicalCure: "ମ୍ୟାଙ୍କୋଜେବ (Mancozeb) କବକନାଶକ ବ୍ୟବହାର କରନ୍ତୁ |",
+    speechText: "ପତ୍ର ଚିତା ରୋଗ ଚିହ୍ନଟ ହୋଇଛି | ନିମ୍ବ ତେଲ ବ୍ୟବହାର କରନ୍ତୁ |"
+  },
+  "en-IN": {
+    diseaseName: "Leaf Spot Disease",
+    recoveryStatus: "Curable",
+    diseaseType: "Fungal Infection",
+    symptomsText: "Brown concentric spots with chlorotic yellow halos observed on leaves.",
+    organicCure: "Foliar spray of 3% Neem Oil formulation every 7 days.",
+    chemicalCure: "Apply Mancozeb 75% WP contact fungicide at 2g/L water.",
+    speechText: "Leaf spot detected. Spray neem oil for natural remedy or apply Mancozeb fungicide."
+  }
 };
 
-// DOM Elements
+// DOM References
 const langSelect = document.getElementById('langSelect');
 const startBtn = document.getElementById('startBtn');
 const stopBtn = document.getElementById('stopBtn');
@@ -121,89 +314,109 @@ const chemicalCure = document.getElementById('chemicalCure');
 
 let stream = null;
 let currentLanguage = "ta-IN";
-
-// Initialize Speech Synthesis Voices
 let availableVoices = [];
+
+// Voice loading mechanism
 function loadVoices() {
-    if ('speechSynthesis' in window) {
-        availableVoices = window.speechSynthesis.getVoices();
-    }
+  if ('speechSynthesis' in window) {
+    availableVoices = window.speechSynthesis.getVoices();
+  }
 }
-window.speechSynthesis.onvoiceschanged = loadVoices;
 
-// Update UI and trigger speech output
+if ('speechSynthesis' in window) {
+  loadVoices();
+  window.speechSynthesis.onvoiceschanged = loadVoices;
+}
+
+// UI & Audio Sync
 function updateUIAndVoice(langCode) {
-    currentLanguage = langCode;
-    const data = languageData[langCode] || languageData["en-IN"];
+  currentLanguage = langCode;
+  const data = languageData[langCode] || languageData["en-IN"];
 
-    // Update Text Elements
-    diseaseName.innerText = data.diseaseName;
-    recoveryStatus.innerText = data.recoveryStatus;
-    accuracyVal.innerText = "94.8%";
-    diseaseType.innerText = data.diseaseType;
-    symptomsText.innerText = data.symptomsText;
-    organicCure.innerText = data.organicCure;
-    chemicalCure.innerText = data.chemicalCure;
+  diseaseName.innerText = data.diseaseName;
+  recoveryStatus.innerText = data.recoveryStatus;
+  accuracyVal.innerText = "94.8%";
+  diseaseType.innerText = data.diseaseType;
+  symptomsText.innerText = data.symptomsText;
+  organicCure.innerText = data.organicCure;
+  chemicalCure.innerText = data.chemicalCure;
 
-    // Trigger Voice Synthesis
-    speakDiagnostics(data.speechText, langCode);
+  speakDiagnostics(data.speechText, langCode);
 }
 
-// Native Text-to-Speech Engine
+// Text-to-Speech Core Function
 function speakDiagnostics(text, langCode) {
-    if (!('speechSynthesis' in window)) return;
+  if (!('speechSynthesis' in window)) return;
 
-    window.speechSynthesis.cancel(); // Stop ongoing speech
+  window.speechSynthesis.cancel(); // Reset ongoing speech
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = langCode;
-    utterance.rate = 0.9; // Natural pace
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = langCode;
+  utterance.rate = 0.9;
 
-    // Find native voice matching target language
-    const nativeVoice = availableVoices.find(voice => voice.lang === langCode || voice.lang.replace('_', '-') === langCode);
-    if (nativeVoice) {
-        utterance.voice = nativeVoice;
-    }
+  if (availableVoices.length === 0) loadVoices();
 
-    window.speechSynthesis.speak(utterance);
+  const targetLang = langCode.toLowerCase().replace('_', '-');
+  const nativeVoice = availableVoices.find(v => {
+    const vLang = v.lang.toLowerCase().replace('_', '-');
+    return vLang === targetLang || vLang.startsWith(targetLang.split('-')[0]);
+  });
+
+  if (nativeVoice) {
+    utterance.voice = nativeVoice;
+  }
+
+  window.speechSynthesis.speak(utterance);
 }
 
 // Event Listeners
 langSelect.addEventListener('change', (e) => {
+  if (!resultCard.classList.contains('hidden')) {
     updateUIAndVoice(e.target.value);
+  } else {
+    currentLanguage = e.target.value;
+  }
 });
 
 speakBtn.addEventListener('click', () => {
-    const data = languageData[currentLanguage] || languageData["en-IN"];
-    speakDiagnostics(data.speechText, currentLanguage);
+  const data = languageData[currentLanguage] || languageData["en-IN"];
+  speakDiagnostics(data.speechText, currentLanguage);
 });
 
 startBtn.addEventListener('click', async () => {
-    try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-        webcam.srcObject = stream;
-        cameraPlaceholder.classList.add('hidden');
-        scanLine.classList.remove('hidden');
-        
-        // Simulate real-time processing delay
-        setTimeout(() => {
-            resultCard.classList.remove('hidden');
-            updateUIAndVoice(langSelect.value);
-        }, 1500);
-    } catch (err) {
-        alert("Camera access required for scanner: " + err.message);
-    }
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ 
+      video: { facingMode: "environment" } 
+    });
+    
+    webcam.srcObject = stream;
+    webcam.classList.remove('hidden');
+    cameraPlaceholder.classList.add('hidden');
+    scanLine.classList.remove('hidden');
+
+    // Simulated scan latency
+    setTimeout(() => {
+      resultCard.classList.remove('hidden');
+      updateUIAndVoice(langSelect.value);
+    }, 1500);
+
+  } catch (err) {
+    alert("Camera permissions required: " + err.message);
+  }
 });
 
 stopBtn.addEventListener('click', () => {
-    if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-        webcam.srcObject = null;
-    }
-    cameraPlaceholder.classList.remove('hidden');
-    scanLine.classList.add('hidden');
-    window.speechSynthesis.cancel();
+  if (stream) {
+    stream.getTracks().forEach(track => track.stop());
+    stream = null;
+  }
+  webcam.srcObject = null;
+  webcam.classList.add('hidden');
+  cameraPlaceholder.classList.remove('hidden');
+  scanLine.classList.add('hidden');
+  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
 });
+</script>
 
-// Initial voice load trigger
-loadVoices();
+</body>
+</html>
