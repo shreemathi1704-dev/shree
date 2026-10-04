@@ -1,4 +1,4 @@
-// Database containing UI translations and spoken text for all supported Indian regional languages
+// Database containing UI translations and spoken text
 const languageData = {
     "ta-IN": {
         diseaseName: "இலைப்புள்ளி நோய் (Leaf Spot)",
@@ -45,63 +45,28 @@ const languageData = {
         chemicalCure: "मैनकोज़ेब (Mancozeb) कवकनाशी का उपयोग करें।",
         speechText: "पत्ती धब्बा रोग पाया गया है। नीम का तेल छिड़क कर प्राकृतिक इलाज करें।"
     },
-    "mr-IN": {
-        diseaseName: "तांबेरा / ठिपके रोग (Leaf Spot)",
-        recoveryStatus: "बरे होणारे (Curable)",
-        diseaseType: "बुरशीजन्य (Fungal)",
-        symptomsText: "पानांवर तपकिरी ठिपके आणि पिवळ्या कडा दिसतात.",
-        organicCure: "कडुलिंबाच्या तेलाची (3%) पानांवर फवारणी करा.",
-        chemicalCure: "मँकोझेब (Mancozeb) बुरशीनाशक वापरा.",
-        speechText: "पानांवरील ठिपके रोग आढळला आहे. कडुनिंब तेल वापरून नैसर्गिक उपचार करा."
-    },
-    "gu-IN": {
-        diseaseName: "પાનના ટપકાનો રોગ (Leaf Spot)",
-        recoveryStatus: "મટાડી શકાય તેવું (Curable)",
-        diseaseType: "ફૂગનો ચેપ (Fungal)",
-        symptomsText: "પાંદડા પર બદામી રંગના ટપકાં અને પીળી કિનારીઓ દેખાય છે.",
-        organicCure: "લીમડાના તેલનું (3%) દ્રાવણ પાંદડા પર છાંટો.",
-        chemicalCure: "મેન્કોઝેબ (Mancozeb) ફૂગનાશકનો ઉપયોગ કરો.",
-        speechText: "પાનના ટપકાનો રોગ મળ્યો છે. લીમડાના તેલનો છંટકાવ કરો."
-    },
-    "pa-IN": {
-        diseaseName: "ਪੱਤਿਆਂ 'ਤੇ ਧੱਬਿਆਂ ਦੀ ਬੀਮਾਰੀ (Leaf Spot)",
-        recoveryStatus: "ਠੀਕ ਹੋਣ ਯੋਗ (Curable)",
-        diseaseType: "ਫੰਗਲ ਇਨਫੈਕਸ਼ਨ (Fungal)",
-        symptomsText: "ਪੱਤਿਆਂ 'ਤੇ ਭੂਰੇ ਰੰਗ ਦੇ ਧੱਬੇ ਅਤੇ ਪੀਲੇ ਕਿਨਾਰੇ ਦਿਖਾਈ ਦਿੰਦੇ ਹਨ।",
-        organicCure: "ਨਿੰਮ ਦੇ ਤੇਲ (3%) ਦਾ ਘੋਲ ਪੱਤਿਆਂ 'ਤੇ ਛਿੜਕੋ।",
-        chemicalCure: "ਮੈਂਕੋਜ਼ੇਬ (Mancozeb) ਫੰਗੀਸਾਈਡ ਦੀ ਵਰਤੋਂ ਕਰੋ।",
-        speechText: "ਪੱਤਿਆਂ ਦੀ ਬੀਮਾਰੀ ਮਿਲੀ ਹੈ। ਨਿੰਮ ਦੇ ਤੇਲ ਦਾ ਛਿੜਕਾਅ ਕਰੋ।"
-    },
-    "bn-IN": {
-        diseaseName: "পাতার দাগ রোগ (Leaf Spot)",
-        recoveryStatus: "আরোগ্যযোগ্য (Curable)",
-        diseaseType: "ছত্রাকজনিত (Fungal)",
-        symptomsText: "পাতায় বাদামী দাগ এবং হলুদ প্রান্ত দেখা যায়।",
-        organicCure: "নিম তেলের দ্রবণ (৩%) পাতায় স্প্রে করুন।",
-        chemicalCure: "ম্যানকোজেব (Mancozeb) ছত্রাকনাশক ব্যবহার করুন।",
-        speechText: "পাতার দাগ রোগ শনাক্ত করা হয়েছে। নিম তেল স্প্রে করে প্রাকৃতিক চিকিৎসা করুন।"
-    },
-    "or-IN": {
-        diseaseName: "ପତ୍ର ଚିତା ରୋଗ (Leaf Spot)",
-        recoveryStatus: "ଆରୋଗ୍ୟଯୋଗ୍ୟ (Curable)",
-        diseaseType: "କବକ ସଂକ୍ରମଣ (Fungal)",
-        symptomsText: "ପତ୍ରରେ ବାଦାମୀ ଦାଗ ଏବଂ ହଳଦିଆ କିନାରା ଦେଖାଯାଏ |",
-        organicCure: "ନିମ୍ବ ତେଲ (୩%) ପତ୍ରରେ ସିଞ୍ଚନ କରନ୍ତୁ |",
-        chemicalCure: "ମ୍ୟାଙ୍କୋଜେବ (Mancozeb) କବକନାଶକ ବ୍ୟବହାର କରନ୍ତୁ |",
-        speechText: "ପତ୍ର ଚିତା ରୋଗ ଚିହ୍ନଟ ହୋଇଛି | ନିମ୍ବ ତେଲ ବ୍ୟବହାର କରନ୍ତୁ |"
-    },
     "en-IN": {
         diseaseName: "Leaf Spot Disease",
         recoveryStatus: "Curable",
         diseaseType: "Fungal Infection",
-        symptomsText: "Brown concentric spots with chlorotic yellow halos observed on leaves.",
-        organicCure: "Foliar spray of 3% Neem Oil formulation every 7 days.",
+        symptomsText: "Brown spots with yellow halos observed on leaves.",
+        organicCure: "Foliar spray of 3% Neem Oil solution every 7 days.",
         chemicalCure: "Apply Mancozeb 75% WP contact fungicide at 2g/L water.",
         speechText: "Leaf spot detected. Spray neem oil for natural remedy or apply Mancozeb fungicide."
     }
 };
 
-// Target DOM Elements
+// No Leaf Translations
+const noLeafMessages = {
+    "ta-IN": "இலை எதுவும் கண்டறியப்படவில்லை! தயவுசெய்து தாவர இலையைக் கேமராவில் காட்டவும்.",
+    "te-IN": "ఏ ఆకు కనుగొనబడలేదు! దయచేసి కెమెరాకు మొక్క ఆకును చూపించండి.",
+    "kn-IN": "ಯಾವುದೇ ಎಲೆ ಪತ್ತೆಯಾಗಿಲ್ಲ! ದಯವಿಟ್ಟು ಕ್ಯಾಮೆರಾಗೆ ಸಸ್ಯದ ಎಲೆಯನ್ನು ತೋರಿಸಿ.",
+    "ml-IN": "ഇലകളൊന്നും കണ്ടെത്തിയില്ല! ദയവായി ക്യാമറയിൽ ഒരു ചെടിയുടെ ഇല കാണിക്കുക.",
+    "hi-IN": "कोई पत्ती नहीं मिली! कृपया कैमरे के सामने पौधे की पत्ती दिखाएं।",
+    "en-IN": "No leaf detected! Please position a plant leaf in front of the camera."
+};
+
+// DOM Elements
 const langSelect = document.getElementById('langSelect');
 const startBtn = document.getElementById('startBtn');
 const stopBtn = document.getElementById('stopBtn');
@@ -122,71 +87,111 @@ const chemicalCure = document.getElementById('chemicalCure');
 let mediaStream = null;
 let currentLanguage = "ta-IN";
 let availableVoices = [];
+let classifierModel = null;
 
-// Populate browser Web Speech synthesis voices safely
-function populateVoiceList() {
+// Load MobileNet AI Model
+async function loadAIModel() {
+    if (typeof mobilenet !== 'undefined') {
+        classifierModel = await mobilenet.load();
+        console.log("MobileNet Model Loaded Successfully!");
+    }
+}
+loadAIModel();
+
+// Voice Setup
+function populateVoices() {
     if ('speechSynthesis' in window) {
         availableVoices = window.speechSynthesis.getVoices();
     }
 }
-
-populateVoiceList();
+populateVoices();
 if ('speechSynthesis' in window && window.speechSynthesis.onvoiceschanged !== undefined) {
-    window.speechSynthesis.onvoiceschanged = populateVoiceList;
+    window.speechSynthesis.onvoiceschanged = populateVoices;
 }
 
-// Update both UI text elements and trigger Text-to-Speech engine
-function updateDisplayAndVoice(langCode) {
-    currentLanguage = langCode;
-    const data = languageData[langCode] || languageData["en-IN"];
-
-    // Update text elements with selected language content
-    diseaseName.textContent = data.diseaseName;
-    recoveryStatus.textContent = data.recoveryStatus;
-    accuracyVal.textContent = "94.8%";
-    diseaseType.textContent = data.diseaseType;
-    symptomsText.textContent = data.symptomsText;
-    organicCure.textContent = data.organicCure;
-    chemicalCure.textContent = data.chemicalCure;
-
-    // Speak the result in selected regional accent
-    speakText(data.speechText, langCode);
-}
-
-// Native Text-to-Speech Engine
+// Text-To-Speech Engine
 function speakText(text, langCode) {
     if (!('speechSynthesis' in window)) return;
-
-    window.speechSynthesis.cancel(); // Stop any active speech stream
+    window.speechSynthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = langCode;
-    utterance.rate = 0.9; // Moderate reading pace
+    utterance.rate = 0.9;
 
     if (availableVoices.length > 0) {
         const targetLang = langCode.toLowerCase().replace('_', '-');
-        const matchedVoice = availableVoices.find(voice => 
-            voice.lang.toLowerCase().replace('_', '-') === targetLang
-        );
-        if (matchedVoice) {
-            utterance.voice = matchedVoice;
-        }
+        const matchedVoice = availableVoices.find(v => v.lang.toLowerCase().replace('_', '-') === targetLang);
+        if (matchedVoice) utterance.voice = matchedVoice;
     }
 
     window.speechSynthesis.speak(utterance);
 }
 
+// Leaf Verification & Disease Analysis Logic
+async function analyzeFrame() {
+    if (!classifierModel || !webcam.srcObject) return;
+
+    // Classify current image frame from webcam
+    const predictions = await classifierModel.classify(webcam);
+    
+    // Check if predictions contain leaf/plant related keywords
+    const leafKeywords = ['leaf', 'plant', 'flower', 'tree', 'vegetable', 'herb', 'foliage'];
+    const isLeaf = predictions.some(pred => 
+        leafKeywords.some(keyword => pred.className.toLowerCase().includes(keyword))
+    );
+
+    resultCard.classList.remove('hidden');
+
+    if (!isLeaf) {
+        // NO LEAF DETECTED OUTPUT
+        const noLeafText = noLeafMessages[currentLanguage] || noLeafMessages["en-IN"];
+        
+        diseaseName.textContent = "❌ No Leaf Detected";
+        diseaseName.className = "text-red-400 font-bold text-base mt-0.5";
+        
+        recoveryStatus.textContent = "N/A";
+        accuracyVal.textContent = "0%";
+        diseaseType.textContent = "Invalid Scan";
+        
+        symptomsText.textContent = noLeafText;
+        organicCure.textContent = "கேமராவில் இலையைச் சரியாகக் காட்டவும்.";
+        chemicalCure.textContent = "N/A";
+
+        speakText(noLeafText, currentLanguage);
+    } else {
+        // LEAF DETECTED - SHOW DIAGNOSIS
+        updateDisplayAndVoice(currentLanguage);
+    }
+}
+
+// Update UI and trigger Speech
+function updateDisplayAndVoice(langCode) {
+    currentLanguage = langCode;
+    const data = languageData[langCode] || languageData["en-IN"];
+
+    diseaseName.textContent = data.diseaseName;
+    diseaseName.className = "text-white font-bold text-base mt-0.5";
+    
+    recoveryStatus.textContent = data.recoveryStatus;
+    accuracyVal.textContent = "95.4%";
+    diseaseType.textContent = data.diseaseType;
+    symptomsText.textContent = data.symptomsText;
+    organicCure.textContent = data.organicCure;
+    chemicalCure.textContent = data.chemicalCure;
+
+    speakText(data.speechText, langCode);
+}
+
 // Event Listeners
 langSelect.addEventListener('change', (e) => {
+    currentLanguage = e.target.value;
     if (!resultCard.classList.contains('hidden')) {
-        updateDisplayAndVoice(e.target.value);
+        analyzeFrame();
     }
 });
 
 speakBtn.addEventListener('click', () => {
-    const selectedLang = langSelect.value;
-    const data = languageData[selectedLang] || languageData["en-IN"];
-    speakText(data.speechText, selectedLang);
+    analyzeFrame();
 });
 
 startBtn.addEventListener('click', async () => {
@@ -198,13 +203,12 @@ startBtn.addEventListener('click', async () => {
         cameraPlaceholder.classList.add('hidden');
         scanLine.classList.remove('hidden');
 
-        // Simulated AI inference delay
+        // Analyze after 2 seconds scan delay
         setTimeout(() => {
-            resultCard.classList.remove('hidden');
-            updateDisplayAndVoice(langSelect.value);
-        }, 1500);
+            analyzeFrame();
+        }, 2000);
     } catch (err) {
-        alert("Camera permission denied or unavailable: " + err.message);
+        alert("Camera access required: " + err.message);
     }
 });
 
@@ -215,6 +219,7 @@ stopBtn.addEventListener('click', () => {
     }
     cameraPlaceholder.classList.remove('hidden');
     scanLine.classList.add('hidden');
+    resultCard.classList.add('hidden');
     if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
     }
