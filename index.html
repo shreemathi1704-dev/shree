@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ta">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -149,7 +149,7 @@
 <body>
 
 <div class="container">
-  <h1>பயிர் நோய் கண்டறிதல் scanner</h1>
+  <h1>Plant Disease Scanner</h1>
 
   <div class="controls">
     <select id="langSelect">
@@ -167,26 +167,26 @@
     </select>
 
     <div class="btn-group">
-      <button id="startBtn">ஸ்கேன் செய் (Start)</button>
-      <button id="stopBtn">நிறுத்து (Stop)</button>
-      <button id="speakBtn">🔊 பேசு (Speak)</button>
+      <button id="startBtn">Start Scan</button>
+      <button id="stopBtn">Stop</button>
+      <button id="speakBtn">🔊 Speak</button>
     </div>
   </div>
 
   <div class="camera-container">
-    <div id="cameraPlaceholder" class="camera-placeholder">கேமரா ஆன் செய்யப்படவில்லை</div>
+    <div id="cameraPlaceholder" class="camera-placeholder">Camera is currently inactive</div>
     <video id="webcam" autoplay playsinline class="hidden"></video>
     <div id="scanLine" class="scan-line hidden"></div>
   </div>
 
   <div id="resultCard" class="result-card hidden">
     <h2 id="diseaseName">-</h2>
-    <div class="info-row"><strong>மீட்பு நிலை:</strong> <span id="recoveryStatus">-</span></div>
-    <div class="info-row"><strong>துல்லியம்:</strong> <span id="accuracyVal">-</span></div>
-    <div class="info-row"><strong>வகை:</strong> <span id="diseaseType">-</span></div>
-    <div class="info-row"><strong>அறிகுறிகள்:</strong> <span id="symptomsText">-</span></div>
-    <div class="info-row"><strong>இயற்கை சிகிச்சை:</strong> <span id="organicCure">-</span></div>
-    <div class="info-row"><strong>ரசாயன சிகிச்சை:</strong> <span id="chemicalCure">-</span></div>
+    <div class="info-row"><strong>Recovery Status:</strong> <span id="recoveryStatus">-</span></div>
+    <div class="info-row"><strong>Accuracy:</strong> <span id="accuracyVal">-</span></div>
+    <div class="info-row"><strong>Type:</strong> <span id="diseaseType">-</span></div>
+    <div class="info-row"><strong>Symptoms:</strong> <span id="symptomsText">-</span></div>
+    <div class="info-row"><strong>Organic Treatment:</strong> <span id="organicCure">-</span></div>
+    <div class="info-row"><strong>Chemical Treatment:</strong> <span id="chemicalCure">-</span></div>
   </div>
 </div>
 
@@ -294,7 +294,7 @@ const languageData = {
   }
 };
 
-// DOM References
+// DOM Elements
 const langSelect = document.getElementById('langSelect');
 const startBtn = document.getElementById('startBtn');
 const stopBtn = document.getElementById('stopBtn');
@@ -316,7 +316,7 @@ let stream = null;
 let currentLanguage = "ta-IN";
 let availableVoices = [];
 
-// Voice loading mechanism
+// Voice loading handling
 function loadVoices() {
   if ('speechSynthesis' in window) {
     availableVoices = window.speechSynthesis.getVoices();
@@ -328,7 +328,7 @@ if ('speechSynthesis' in window) {
   window.speechSynthesis.onvoiceschanged = loadVoices;
 }
 
-// UI & Audio Sync
+// Update UI and trigger speech output
 function updateUIAndVoice(langCode) {
   currentLanguage = langCode;
   const data = languageData[langCode] || languageData["en-IN"];
@@ -344,11 +344,11 @@ function updateUIAndVoice(langCode) {
   speakDiagnostics(data.speechText, langCode);
 }
 
-// Text-to-Speech Core Function
+// Text-to-Speech Engine
 function speakDiagnostics(text, langCode) {
   if (!('speechSynthesis' in window)) return;
 
-  window.speechSynthesis.cancel(); // Reset ongoing speech
+  window.speechSynthesis.cancel();
 
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = langCode;
@@ -388,20 +388,20 @@ startBtn.addEventListener('click', async () => {
     stream = await navigator.mediaDevices.getUserMedia({ 
       video: { facingMode: "environment" } 
     });
-    
+
     webcam.srcObject = stream;
     webcam.classList.remove('hidden');
     cameraPlaceholder.classList.add('hidden');
     scanLine.classList.remove('hidden');
 
-    // Simulated scan latency
+    // Simulate analysis processing delay
     setTimeout(() => {
       resultCard.classList.remove('hidden');
       updateUIAndVoice(langSelect.value);
     }, 1500);
 
   } catch (err) {
-    alert("Camera permissions required: " + err.message);
+    alert("Camera access required for scanner: " + err.message);
   }
 });
 
